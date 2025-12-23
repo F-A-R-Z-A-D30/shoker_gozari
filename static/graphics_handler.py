@@ -1,8 +1,23 @@
 from static.content.loader import get_all_topics, load_day_content
+import sys
+import os
+
+# اضافه کردن مسیر ریشه پروژه به پایتون برای پیدا کردن loader.py
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    # تلاش برای ایمپورت از ریشه پروژه
+    from loader import get_all_topics, load_day_content
+except ImportError:
+    # مسیر جایگزین در صورت نیاز
+    try:
+        from static.content.loader import get_all_topics, load_day_content
+    except ImportError:
+        # اگر لودر کنار خود فایل است
+        from loader import get_all_topics, load_day_content
 
 
 class GraphicsHandler:
-    """کلاس مدیریت نمایش گرافیکی"""
 
     @staticmethod
     def create_beautiful_message(topic_name, day_number, user_progress=None):
