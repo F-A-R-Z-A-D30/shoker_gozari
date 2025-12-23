@@ -5,13 +5,36 @@ import requests
 from dotenv import load_dotenv
 from flask import Flask
 from threading import Thread
+import sys
 
-# بخش Flask برای زنده نگه داشتن در رندر
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    # اول فرض می‌کنیم فایل loader.py دقیقاً کنار همین فایل است
+    from loader import (
+        load_day_content, get_all_topics, get_topic_by_id,
+        start_topic_for_user, complete_day_for_user, get_user_topic_progress
+    )
+except ImportError:
+    # اگر نبود، از مسیر پکیج استاتیک تست می‌کنیم
+    from static.content.loader import (
+        load_day_content, get_all_topics, get_topic_by_id,
+        start_topic_for_user, complete_day_for_user, get_user_topic_progress
+    )
+
+# سایر ایمپورت‌های ثابت شما
+from static.graphics_handler import GraphicsHandler
+from daily_reset import daily_reset
+
+# --- تنظیمات سرور برای رفع خطای No open ports در Render ---
 app = Flask('')
+
 @app.route('/')
-def home(): return "Bot is Running! 🚀"
+def home():
+    return "Bot is Running! 🚀"
 
 def run_web_server():
+    # طبق مستندات رندر که فرستادی، پورت باید به 0.0.0.0 بایند شود
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
 
@@ -19,6 +42,7 @@ def keep_alive():
     t = Thread(target=run_web_server)
     t.daemon = True
     t.start()
+
 
 # --- اصلاح ایمپورت (اگر لودر کنار همین فایل است) ---
 try:
