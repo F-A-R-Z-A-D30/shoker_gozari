@@ -6,12 +6,10 @@ from dotenv import load_dotenv
 from flask import Flask
 from threading import Thread
 
-# --- بخش حقه زنده نگه داشتن (Keep Alive) ---
+# بخش Flask برای زنده نگه داشتن در رندر
 app = Flask('')
-
 @app.route('/')
-def home():
-    return "Bot is Alive! 🚀"
+def home(): return "Bot is Running! 🚀"
 
 def run_web_server():
     port = int(os.environ.get('PORT', 10000))
@@ -19,26 +17,34 @@ def run_web_server():
 
 def keep_alive():
     t = Thread(target=run_web_server)
+    t.daemon = True
     t.start()
-# ------------------------------------------
+
+# --- اصلاح ایمپورت (اگر لودر کنار همین فایل است) ---
+try:
+    from loader import (
+        load_day_content,
+        get_all_topics,
+        get_topic_by_id,
+        start_topic_for_user,
+        complete_day_for_user,
+        get_user_topic_progress
+    )
+except ImportError:
+    # اگر لودر داخل پوشه static/content است
+    from static.content.loader import (
+        load_day_content,
+        get_all_topics,
+        get_topic_by_id,
+        start_topic_for_user,
+        complete_day_for_user,
+        get_user_topic_progress
+    )
 
 from static.graphics_handler import GraphicsHandler
-from static.content.loader import (
-    load_day_content,
-    get_all_topics,
-    get_topic_by_id,
-    start_topic_for_user,
-    complete_day_for_user,
-    get_user_topic_progress
-)
-
-# ایمپورت مدیر بازنشانی روزانه
 from daily_reset import daily_reset
 
-# بارگذاری متغیرهای محیطی
-load_dotenv()
-# ایمپورت مدیر بازنشانی روزانه
-from daily_reset import daily_reset
+# ادامه کدهای اصلی شما بدون هیچ تغییری...
 
 # بارگذاری متغیرهای محیطی
 load_dotenv()
@@ -109,8 +115,8 @@ def answer_callback(callback_id):
 
 # ========== تابع پرداخت ساده ==========
 
-def send_donation_invoice(chat_id, user_id, amount=10000):
-    """ارسال صورتحساب برای حمایت مالی با مبلغ دلخواه"""
+def send_donation_invoice(chat_id, user_id):
+    """ارسال صورتحساب برای حمایت مالی"""
 
     provider_token = os.getenv('BALE_PROVIDER_TOKEN')
     if not provider_token:
@@ -124,14 +130,14 @@ def send_donation_invoice(chat_id, user_id, amount=10000):
     data = {
         "chat_id": chat_id,
         "title": "حمایت از توسعه‌دهنده",
-        "description": f"حمایت مالی داوطلبانه به مبلغ {amount:,} ریال\n(هر مبلغی که مایل باشید)",
+        "description": "حمایت مالی داوطلبانه برای توسعه و بهبود ربات معجزه شکرگزاری",
         "payload": f"donation_{user_id}_{int(time.time())}",
         "provider_token": provider_token,
         "currency": "IRT",
         "prices": [
             {
-                "label": "حمایت مالی داوطلبانه",
-                "amount": amount  # مبلغ به ریال
+                "label": "حمایت مالی",
+                "amount": 10000  # 10,000 تومان
             }
         ]
     }
@@ -141,7 +147,7 @@ def send_donation_invoice(chat_id, user_id, amount=10000):
         result = response.json()
 
         if result.get("ok"):
-            print(f"✅ Invoice حمایت ارسال شد برای کاربر {user_id} - مبلغ: {amount:,} ریال")
+            print(f"✅ Invoice حمایت ارسال شد برای کاربر {user_id}")
             return True
         else:
             print(f"❌ خطا در ارسال Invoice: {result}")
@@ -164,7 +170,7 @@ def handle_successful_payment(update):
     amount = payment["total_amount"]
 
     print(f"💰 پرداخت موفق از کاربر {user_id}")
-    print(f"💵 مبلغ: {amount:,} ریال")
+    print(f"💵 مبلغ: {amount} ریال")
 
     # ارسال تشکر
     amount_toman = amount / 10  # تبدیل به تومان
@@ -199,31 +205,10 @@ def create_start_keyboard():
     keyboard = {
         "inline_keyboard": [
             [
-                {"text": "💖 حمایت از توسعه‌دهنده", "callback_data": "support_options"}
+                {"text": "💖 حمایت از توسعه‌دهنده", "callback_data": "support_developer"}
             ],
             [
                 {"text": "🚀 شروع استفاده از ربات", "callback_data": "start_using"}
-            ]
-        ]
-    }
-    return keyboard
-
-
-def create_support_options_keyboard():
-    """کیبورد انتخاب مبلغ حمایت"""
-    keyboard = {
-        "inline_keyboard": [
-            [
-                {"text": "۱۰,۰۰۰ تومان", "callback_data": "support_10000"},
-                {"text": "۲۰,۰۰۰ تومان", "callback_data": "support_20000"}
-            ],
-            [
-                {"text": "۵۰,۰۰۰ تومان", "callback_data": "support_50000"},
-                {"text": "۱۰۰,۰۰۰ تومان", "callback_data": "support_100000"}
-            ],
-            [
-                {"text": "💰 مبلغ دلخواه", "callback_data": "support_custom"},
-                {"text": "⏪ بازگشت", "callback_data": "support_back"}
             ]
         ]
     }
@@ -251,27 +236,6 @@ def handle_start(chat_id, user_id, username, first_name):
 
     start_keyboard = create_start_keyboard()
     send_message(chat_id, start_text, start_keyboard)
-
-
-def handle_support_options(chat_id, user_id):
-    """نمایش گزینه‌های حمایت"""
-    support_text = """
-💖 <b>انتخاب مبلغ حمایت</b>
-
-لطفاً یکی از مبالغ زیر را انتخاب کنید یا مبلغ دلخواه خود را وارد کنید:
-
-🌟 <b>گزینه‌های موجود:</b>
-• ۱۰,۰۰۰ تومان
-• ۲۰,۰۰۰ تومان  
-• ۵۰,۰۰۰ تومان
-• ۱۰۰,۰۰۰ تومان
-• یا هر مبلغ دلخواه دیگری
-
-🙏 <i>هر مبلغی که مایل باشید قابل قبول است. هدف فقط حمایت و قدردانی است.</i>
-"""
-
-    support_keyboard = create_support_options_keyboard()
-    send_message(chat_id, support_text, support_keyboard)
 
 
 def handle_category_selection(chat_id, user_id, topic_id):
@@ -526,7 +490,6 @@ def handle_help(chat_id):
 💖 <b>حمایت داوطلبانه:</b>
 • ربات کاملاً رایگان است
 • حمایت مالی اختیاری است
-• هر مبلغی قابل قبول است
 • برای تشکر و کمک به توسعه
 
 🌟 <b>نکات مهم:</b>
@@ -688,7 +651,6 @@ farzadq.ir@gmail.com
 ✅ طراحی و توسعه API و سیستم‌های پایگاه‌داده  
 ✅ مشاوره، پشتیبانی فنی و دوره‌های آموزشی برنامه‌نویسی  
 
-    🌍**www.danekar.ir**
 ---
 
 ✨ *برای شروع پروژه، دریافت مشاوره یا همکاری، از طریق راه‌های فوق در ارتباط باشید.*
@@ -824,18 +786,6 @@ def handle_message(chat_id, user_id, text, username="", first_name=""):
     elif text == "💫 پیام تشویقی":
         handle_encourage(chat_id, 1)
 
-    # پردازش مبلغ دلخواه حمایت
-    elif text.isdigit():
-        # اگر عدد وارد کرد، آن را به عنوان مبلغ حمایت در نظر بگیر
-        amount = int(text)
-        if amount >= 1000:  # حداقل 100 تومان (1000 ریال)
-            amount_rials = amount
-            if amount < 10000:  # اگر کمتر از 1000 تومان وارد کرد، آن را به ریال تبدیل کن
-                amount_rials = amount * 10  # تبدیل تومان به ریال
-
-            send_donation_invoice(chat_id, user_id, amount_rials)
-        else:
-            send_message(chat_id, "⚠️ مبلغ باید حداقل ۱۰۰ تومان باشد.")
     else:
         # تشخیص موضوع از روی متن دکمه
         topics = get_all_topics()
@@ -968,52 +918,13 @@ def start_polling():
                                 handle_contact_developer(chat_id)
 
                             # اضافه کردن handler برای حمایت
-                            elif data == "support_options":
-                                handle_support_options(chat_id, user_id)
+                            elif data == "support_developer":
+                                send_donation_invoice(chat_id, user_id)
 
                             elif data == "start_using":
                                 categories_text = "🎯 <b>لطفاً یک موضوع از ۸ حوزه اصلی انتخاب کنید:</b>"
                                 markup_keyboard = create_categories_keyboard()
                                 send_message(chat_id, categories_text, markup_keyboard)
-
-                            elif data == "support_back":
-                                # بازگشت به صفحه شروع
-                                start_text = """
-🎯 <b>برای شروع کار با ربات، یکی از گزینه‌های زیر را انتخاب کنید:</b>
-
-• <b>استفاده رایگان:</b> تمام محتوای ربات به صورت کاملاً رایگان در دسترس شماست
-• <b>حمایت داوطلبانه:</b> اگر از ربات راضی هستید و می‌خواهید از توسعه‌دهنده حمایت کنید
-
-💝 <i>ربات به صورت کاملاً رایگان ارائه می‌شود. حمایت شما اختیاری و داوطلبانه است.</i>
-"""
-                                start_keyboard = create_start_keyboard()
-                                send_message(chat_id, start_text, start_keyboard)
-
-                            elif data == "support_custom":
-                                # درخواست مبلغ دلخواه
-                                message = """
-💰 <b>مبلغ دلخواه برای حمایت</b>
-
-لطفاً مبلغ مورد نظر خود را به <b>تومان</b> وارد کنید:
-
-مثال:
-• برای ۵۰,۰۰۰ تومان: <code>50000</code>
-• برای ۱۵,۰۰۰ تومان: <code>15000</code>
-• برای ۱,۰۰۰ تومان: <code>1000</code>
-
-💖 <i>هر مبلغی که مایل باشید قابل قبول است.</i>
-"""
-                                send_message(chat_id, message)
-
-                            elif data.startswith("support_"):
-                                # پردازش مبلغ‌های از پیش تعیین شده
-                                try:
-                                    amount_str = data.split("_")[1]
-                                    amount = int(amount_str)  # مبلغ به تومان
-                                    amount_rials = amount * 10  # تبدیل به ریال
-                                    send_donation_invoice(chat_id, user_id, amount_rials)
-                                except:
-                                    send_message(chat_id, "⚠️ خطا در پردازش مبلغ.")
 
                 time.sleep(1)
 
