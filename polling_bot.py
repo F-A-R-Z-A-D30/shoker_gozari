@@ -3,6 +3,24 @@ import os
 import time
 import requests
 from dotenv import load_dotenv
+from flask import Flask
+from threading import Thread
+
+# --- بخش حقه زنده نگه داشتن (Keep Alive) ---
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is Alive! 🚀"
+
+def run_web_server():
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run_web_server)
+    t.start()
+# ------------------------------------------
 
 from static.graphics_handler import GraphicsHandler
 from static.content.loader import (
@@ -14,6 +32,11 @@ from static.content.loader import (
     get_user_topic_progress
 )
 
+# ایمپورت مدیر بازنشانی روزانه
+from daily_reset import daily_reset
+
+# بارگذاری متغیرهای محیطی
+load_dotenv()
 # ایمپورت مدیر بازنشانی روزانه
 from daily_reset import daily_reset
 
