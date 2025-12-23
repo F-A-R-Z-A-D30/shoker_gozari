@@ -1,0 +1,65 @@
+{
+  "554690431_1": {
+    "last_access": 1766241684.656326,
+    "last_day": 3,
+    "last_access_human": "2025-12-20 18:11:24",
+    "next_reset_at": 1766284200.0,
+    "next_reset_human": "2025-12-21 06:00:00"
+  },
+  "554690431_4": {
+    "last_access": 1766144795.6195338,
+    "last_day": 1,
+    "last_access_human": "2025-12-19 15:16:35",
+    "next_reset_at": 1766197800.0,
+    "next_reset_human": "2025-12-20 06:00:00"
+  },
+  "554690431_3": {
+    "last_access": 1766144969.0836344,
+    "last_day": 1,
+    "last_access_human": "2025-12-19 15:19:29",
+    "next_reset_at": 1766197800.0,
+    "next_reset_human": "2025-12-20 06:00:00"
+  },
+  "554690431_2": {
+    "last_access": 1766145073.3296824,
+    "last_day": 1,
+    "last_access_human": "2025-12-19 15:21:13",
+    "next_reset_at": 1766197800.0,
+    "next_reset_human": "2025-12-20 06:00:00"
+  },
+  "554690431_6": {
+    "last_access": 1766145780.0994756,
+    "last_day": 1,
+    "last_access_human": "2025-12-19 15:33:00",
+    "next_reset_at": 1766197800.0,
+    "next_reset_human": "2025-12-20 06:00:00"
+  },
+  "554690431_8": {
+    "last_access": 1766146789.9576356,
+    "last_day": 3,
+    "last_access_human": "2025-12-19 15:49:49",
+    "next_reset_at": 1766197800.0,
+    "next_reset_human": "2025-12-20 06:00:00"
+  },
+  "554690431_7": {
+    "last_access": 1766244860.6577716,
+    "last_day": 1,
+    "last_access_human": "2025-12-20 19:04:20",
+    "next_reset_at": 1766284200.0,
+    "next_reset_human": "2025-12-21 06:00:00"
+  },
+  "768103633_1": {
+    "last_access": 1766513100.9334683,
+    "last_day": 1,
+    "last_access_human": "2025-12-23 21:35:00",
+    "next_reset_at": 1766543400.0,
+    "next_reset_human": "2025-12-24 06:00:00"
+  },
+  "768103633_2": {
+    "last_access": 1766516047.755722,
+    "last_day": 1,
+    "last_access_human": "2025-12-23 22:24:07",
+    "next_reset_at": 1766543400.0,
+    "next_reset_human": "2025-12-24 06:00:00"
+  }
+}

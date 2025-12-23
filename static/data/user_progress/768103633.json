@@ -1,0 +1,14 @@
+{
+  "1": {
+    "current_day": 1,
+    "started": true,
+    "completed_days": []
+  },
+  "2": {
+    "current_day": 2,
+    "started": true,
+    "completed_days": [
+      1
+    ]
+  }
+}

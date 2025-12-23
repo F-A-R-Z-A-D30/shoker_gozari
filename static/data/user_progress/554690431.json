@@ -1,0 +1,55 @@
+{
+  "1": {
+    "current_day": 4,
+    "started": true,
+    "completed_days": [
+      1,
+      2,
+      3
+    ]
+  },
+  "4": {
+    "current_day": 2,
+    "started": true,
+    "completed_days": [
+      1
+    ]
+  },
+  "8": {
+    "current_day": 4,
+    "started": true,
+    "completed_days": [
+      1,
+      2,
+      3
+    ]
+  },
+  "2": {
+    "current_day": 2,
+    "started": true,
+    "completed_days": [
+      1
+    ]
+  },
+  "3": {
+    "current_day": 1,
+    "started": true,
+    "completed_days": [
+      1
+    ]
+  },
+  "6": {
+    "current_day": 2,
+    "started": true,
+    "completed_days": [
+      1
+    ]
+  },
+  "7": {
+    "current_day": 1,
+    "started": true,
+    "completed_days": [
+      1
+    ]
+  }
+}
