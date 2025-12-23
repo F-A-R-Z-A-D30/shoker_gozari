@@ -1,6 +1,23 @@
-from static.content.loader import get_all_topics, load_day_content
 import sys
 import os
+
+# این کد به پایتون می‌گوید محتوای داخل پوشه content را هم ببیند
+current_dir = os.path.dirname(os.path.abspath(__file__))
+root_path = os.path.dirname(current_dir)
+content_path = os.path.join(root_path, 'content') # مسیر متون شکرگزاری تو
+
+if root_path not in sys.path:
+    sys.path.insert(0, root_path)
+if content_path not in sys.path:
+    sys.path.insert(0, content_path)
+
+try:
+    # ایمپورت کردن لودر از ریشه
+    from loader import get_all_topics, load_day_content
+except ImportError:
+    import loader
+    get_all_topics = loader.get_all_topics
+    load_day_content = loader.load_day_content
 
 # اضافه کردن مسیر ریشه پروژه به پایتون برای پیدا کردن loader.py
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -281,4 +298,5 @@ _{content['intro']}_
 
 <b>🌟 پیام من به شما:</b>
 «شکرگزاری را شروع کنید و معجزه آن را در زندگی خود ببینید»
+
 """
