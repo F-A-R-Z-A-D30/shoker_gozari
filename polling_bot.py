@@ -965,4 +965,11 @@ def start_polling():
 
 
 if __name__ == "__main__":
+    # ۱. اجرای سرور فلکس برای زنده نگه داشتن در رندر
+    print("🌐 Starting Flask Web Server on Port 10000...")
+    keep_alive()
+
+    # ۲. شروع حلقه اصلی ربات
+    print("🚀 Starting Bale Bot Polling...")
+
     start_polling()
