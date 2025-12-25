@@ -11,10 +11,15 @@ import traceback
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # --- بارگذاری ایمن ماژول‌ها ---
+# در فایل polling_bot.py جایگزین بخش ایمپورت قبلی کن:
 try:
     from loader import (
         load_day_content, get_all_topics, get_topic_by_id,
         start_topic_for_user, complete_day_for_user, get_user_topic_progress
+    )
+except ImportError as e:
+    print(f"❌ Critical Error: Could not find loader.py. Details: {e}")
+    sys.exit(1)
     )
 except ImportError:
     from static.content.loader import (
@@ -235,3 +240,4 @@ def start_polling():
 
 if __name__ == "__main__":
     start_polling()
+
