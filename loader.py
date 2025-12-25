@@ -64,7 +64,9 @@ def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dic
     topic = TOPICS[topic_id]
     week_number, day_in_week = get_week_info(day_number)
     week_theme = WEEK_THEMES.get(week_number, WEEK_THEMES[1])
-    module_path = f"content.{topic['folder']}.week_{week_number}" if os.path.exists("content") else f"{topic['folder']}.week_{week_number}"
+    
+    # اصلاح مسیر لود کردن محتوا بر اساس ساختار static/content
+    module_path = f"static.content.{topic['folder']}.week_{week_number}"
 
     try:
         module = importlib.import_module(module_path)
@@ -79,8 +81,17 @@ def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dic
             "exercise": day_content.get("exercise", "")
         }
     except Exception as e:
-        print(f"❌ Error loading: {e}")
-        return {"success": False, "topic_name": topic["name"], "topic_emoji": topic["emoji"], "day_number": day_number, "items": [], "exercise": "تمرین یافت نشد"}
+        print(f"❌ Error loading {module_path}: {e}")
+        # رفع باگ KeyError با اضافه کردن week_title به خروجی خطا
+        return {
+            "success": False, 
+            "topic_name": topic["name"], 
+            "topic_emoji": topic["emoji"], 
+            "day_number": day_number, 
+            "week_title": week_theme["title"], # اضافه شد
+            "items": ["۱۰ مورد شکرگزاری در دفتر خود بنویسید."], 
+            "exercise": "تمرین امروز را با تمرکز انجام دهید."
+        }
 
 def complete_day_for_user(user_id: str, topic_id: int, day_number: int): return UserProgressManager().complete_day(user_id, topic_id, day_number)
 def get_all_topics(): return [{"id": tid, **info} for tid, info in TOPICS.items()]
