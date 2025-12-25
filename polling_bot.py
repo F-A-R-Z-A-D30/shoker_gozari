@@ -27,7 +27,7 @@ from daily_reset import daily_reset
 
 load_dotenv()
 BOT_TOKEN = os.getenv('BALE_BOT_TOKEN')
-PAYMENT_TOKEN = os.getenv('BALE_PAYMENT_TOKEN') # توکن پرداخت را در .env تعریف کن
+PAYMENT_TOKEN = os.getenv('BALE_PROVIDER_TOKEN') # توکن پرداخت را در .env تعریف کن
 BASE_URL = f"https://tapi.bale.ai/bot{BOT_TOKEN}"
 
 app = Flask('')
@@ -208,3 +208,4 @@ def start_polling():
 
 if __name__ == "__main__":
     start_polling()
+
