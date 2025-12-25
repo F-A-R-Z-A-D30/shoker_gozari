@@ -8,24 +8,30 @@ from threading import Thread
 import sys
 import traceback
 
+# اضافه کردن مسیر جاری به سیستم برای شناسایی لودر
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # --- بارگذاری ایمن ماژول‌ها ---
-# در فایل polling_bot.py جایگزین بخش ایمپورت قبلی کن:
 try:
     from loader import (
-        load_day_content, get_all_topics, get_topic_by_id,
-        start_topic_for_user, complete_day_for_user, get_user_topic_progress
+        load_day_content, 
+        get_all_topics, 
+        get_topic_by_id,
+        start_topic_for_user, 
+        complete_day_for_user, 
+        get_user_topic_progress
     )
+    print("✅ Loader imported successfully.")
 except ImportError as e:
-    print(f"❌ Critical Error: Could not find loader.py. Details: {e}")
-    sys.exit(1)
-    )
-except ImportError:
-    from static.content.loader import (
-        load_day_content, get_all_topics, get_topic_by_id,
-        start_topic_for_user, complete_day_for_user, get_user_topic_progress
-    )
+    print(f"❌ Error importing loader: {e}")
+    # تلاش برای مسیر جایگزین در صورت نیاز
+    try:
+        from static.content.loader import (
+            load_day_content, get_all_topics, get_topic_by_id,
+            start_topic_for_user, complete_day_for_user, get_user_topic_progress
+        )
+    except:
+        sys.exit(1)
 
 from static.graphics_handler import GraphicsHandler
 from daily_reset import daily_reset
@@ -80,7 +86,7 @@ def send_photo(chat_id, photo_path, caption=None, keyboard=None):
                 response = requests.post(url, data=payload, files=files, timeout=40)
                 return response.json()
         else:
-            print(f"⚠️ تصویر در مسیر یافت نشد: {photo_path}")
+            print(f"⚠️ تصویر یافت نشد: {photo_path}")
             return send_message(chat_id, caption, keyboard)
     except Exception as e:
         print(f"❌ خطا در ارسال عکس: {e}")
@@ -143,9 +149,9 @@ def handle_category_selection(chat_id, user_id, topic_id):
         msg_text = GraphicsHandler.create_beautiful_message(topic_info['name'], content['day_number'], user_progress)
         inline_keyboard = GraphicsHandler.create_day_inline_keyboard(topic_id, content['day_number'], is_completed)
         
-        # --- اصلاح بخش ارسال عکس ---
+        # ارسال عکس به همراه متن
         photo_path = topic_info.get("image")
-        if photo_path:
+        if photo_path and os.path.exists(photo_path):
             send_photo(chat_id, photo_path, caption=msg_text, keyboard=inline_keyboard)
         else:
             send_message(chat_id, msg_text, inline_keyboard)
@@ -235,9 +241,8 @@ def start_polling():
 
             time.sleep(0.5)
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error in main loop: {e}")
             time.sleep(5)
 
 if __name__ == "__main__":
     start_polling()
-
