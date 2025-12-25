@@ -1,108 +1,73 @@
-"""
-daily_reset.py - سیستم بازنشانی روزانه ساعت ۶ صبح متصل به MongoDB
-"""
-
 import os
-import time
-from datetime import datetime, timedelta
-from typing import Tuple, Optional
 from pymongo import MongoClient
-
-# --- اتصال به MongoDB ---
-MONGO_URI = os.getenv("MONGO_URI")
-
-client = MongoClient(MONGO_URI)
-db = client['shoker_gozari_db']
-access_col = db['daily_access']
+from datetime import datetime, timedelta
 
 class DailyResetManager:
-    """مدیریت دسترسی روزانه بر اساس ساعت ۶ صبح در دیتابیس ابری"""
+    def __init__(self):
+        # اتصال به دیتابیس
+        mongo_uri = os.getenv("MONGO_URI")
+        self.client = MongoClient(mongo_uri)
+        self.db = self.client['shoker_gozari_db']
+        self.collection = self.db['daily_access']
 
-    def __init__(self, reset_hour: int = 6):
-        self.reset_hour = reset_hour
-
-    def _get_user_key(self, user_id: str, topic_id: int) -> str:
-        """ساخت کلید یکتا برای ترکیب کاربر و موضوع"""
-        return f"{user_id}_{topic_id}"
-
-    def _get_next_reset_time(self) -> float:
-        """محاسبه زمان دقیق بازنشانی بعدی (ساعت ۶ صبح)"""
-        now = datetime.now()
-        today_6am = now.replace(hour=self.reset_hour, minute=0, second=0, microsecond=0)
-
-        if now >= today_6am:
-            next_reset = (now + timedelta(days=1)).replace(hour=self.reset_hour, minute=0, second=0, microsecond=0)
-            return next_reset.timestamp()
+    def can_access_today(self, user_id, topic_id):
+        """بررسی می‌کند آیا کاربر امروز اجازه دسترسی دارد یا خیر"""
+        now = datetime.now() + timedelta(hours=3, minutes=30) # تنظیم ساعت به وقت ایران
+        # ساعت ۶ صبح امروز را پیدا می‌کنیم
+        today_6am = now.replace(hour=6, minute=0, second=0, microsecond=0)
         
-        return today_6am.timestamp()
+        # اگر الان قبل از ۶ صبح است، بازنشانی مربوط به ۶ صبح دیروز است
+        if now < today_6am:
+            reset_time = today_6am - timedelta(days=1)
+        else:
+            reset_time = today_6am
 
-    def can_access_today(self, user_id: str, topic_id: int) -> Tuple[bool, Optional[float]]:
-        """بررسی امکان دسترسی کاربر به محتوای جدید"""
-        user_key = self._get_user_key(user_id, topic_id)
-        user_data = access_col.find_one({"user_key": user_key})
+        last_access = self.collection.find_one({
+            "user_id": str(user_id),
+            "topic_id": int(topic_id)
+        })
 
-        if not user_data:
-            return True, self._get_next_reset_time()
+        if not last_access:
+            return True, today_6am
 
-        last_access_time = user_data.get("last_access", 0)
-        last_access_dt = datetime.fromtimestamp(last_access_time)
-        now_dt = datetime.now()
-        today_6am = now_dt.replace(hour=self.reset_hour, minute=0, second=0, microsecond=0)
+        # اگر آخرین دسترسی قبل از ساعت ۶ صبح اخیر بوده، پس مجاز است
+        if last_access['access_time'] < reset_time:
+            return True, today_6am
+        
+        return False, today_6am + timedelta(days=1)
 
-        # اگر آخرین بار قبل از ۶ صبح امروز دسترسی داشته
-        if last_access_dt < today_6am:
-            if now_dt >= today_6am:
-                return True, self._get_next_reset_time()
-            else:
-                return False, today_6am.timestamp()
-
-        # اگر آخرین بار همین امروز (بعد از ۶ صبح) بوده، باید تا فردا صبر کند
-        tomorrow_6am = today_6am + timedelta(days=1)
-        return False, tomorrow_6am.timestamp()
-
-    def record_access(self, user_id: str, topic_id: int, day_number: int):
-        """ثبت زمان دسترسی کاربر در دیتابیس"""
-        user_key = self._get_user_key(user_id, topic_id)
-        current_time = time.time()
-        next_reset = self._get_next_reset_time()
-
-        access_col.update_one(
-            {"user_key": user_key},
+    def record_access(self, user_id, topic_id, day_number):
+        """ثبت زمان دسترسی کاربر"""
+        now = datetime.now() + timedelta(hours=3, minutes=30)
+        self.collection.update_one(
+            {"user_id": str(user_id), "topic_id": int(topic_id)},
             {"$set": {
-                "user_id": str(user_id),
-                "topic_id": topic_id,
-                "last_access": current_time,
-                "last_day": day_number,
-                "last_access_human": datetime.fromtimestamp(current_time).strftime("%Y-%m-%d %H:%M:%S"),
-                "next_reset_at": next_reset,
-                "next_reset_human": datetime.fromtimestamp(next_reset).strftime("%Y-%m-%d %H:%M:%S")
+                "access_time": now,
+                "day_number": day_number
             }},
             upsert=True
         )
 
-    def get_remaining_time(self, user_id: str, topic_id: int) -> Tuple[float, str]:
-        """محاسبه زمان باقیمانده به صورت ثانیه و متن فارسی"""
+    def get_access_info(self, user_id, topic_id):
+        """همان تابعی که رباتت دنبالش می‌گردد و خطا می‌دهد"""
         can_access, next_reset = self.can_access_today(user_id, topic_id)
-        if can_access:
-            return 0, "همین حالا"
-
-        remaining = next_reset - time.time()
-        return remaining, self._format_remaining_time(remaining)
-
-    def _format_remaining_time(self, seconds: float) -> str:
-        if seconds <= 0: return "همین حالا"
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
         
-        if hours > 0:
-            return f"{hours} ساعت و {minutes} دقیقه"
-        return f"{minutes} دقیقه"
+        # محاسبه زمان باقی‌مانده به زبان ساده
+        now = datetime.now() + timedelta(hours=3, minutes=30)
+        remaining = next_reset - now
+        hours, remainder = divmod(remaining.seconds, 3600)
+        minutes, _ = divmod(remainder, 60)
+        
+        return {
+            "has_access": can_access,
+            "next_reset_human": next_reset.strftime("%H:%M"),
+            "remaining_text": f"{hours} ساعت و {minutes} دقیقه",
+            "last_day": 0 # این مقدار در دیتابیس اصلی لودر مدیریت می‌شود
+        }
 
-    def reset_user_access(self, user_id: str, topic_id: int):
-        """پاک کردن رکورد دسترسی برای تست یا رفع مشکل"""
-        user_key = self._get_user_key(user_id, topic_id)
-        access_col.delete_one({"user_key": user_key})
-        return True
+    def reset_user_access(self, user_id, topic_id):
+        """برای شروع مجدد موضوع"""
+        self.collection.delete_one({"user_id": str(user_id), "topic_id": int(topic_id)})
 
-# ایجاد آبجکت اصلی برای استفاده در ربات
-daily_reset = DailyResetManager(reset_hour=6)
+# ایجاد یک نمونه برای استفاده در ربات
+daily_reset = DailyResetManager()
