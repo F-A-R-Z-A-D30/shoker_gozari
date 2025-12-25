@@ -10,7 +10,6 @@ import traceback
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# --- بخش ایمپورت‌ها ---
 try:
     from loader import (
         load_day_content, get_all_topics, get_topic_by_id,
@@ -41,12 +40,11 @@ def keep_alive():
     t.daemon = True
     t.start()
 
-# بارگذاری متغیرها
 load_dotenv()
 BOT_TOKEN = os.getenv('BALE_BOT_TOKEN')
 BASE_URL = f"https://tapi.bale.ai/bot{BOT_TOKEN}"
 
-# ========== توابع ارتباط با API بله ==========
+# ========== توابع API ==========
 
 def send_message(chat_id, text, keyboard=None):
     url = f"{BASE_URL}/sendMessage"
@@ -76,7 +74,7 @@ def answer_callback(callback_id):
     except:
         pass
 
-# ========== مدیریت منطق اصلی ربات ==========
+# ========== منطق اصلی ربات ==========
 
 def handle_start(chat_id, user_id):
     welcome_text = GraphicsHandler.create_welcome_message()
@@ -92,7 +90,7 @@ def handle_start(chat_id, user_id):
     send_message(chat_id, "🎯 برای شروع، یکی از گزینه‌های زیر را انتخاب کنید:", start_keyboard)
 
 def handle_category_selection(chat_id, user_id, topic_id):
-    """بخش اصلاح شده برای مدیریت زمان‌بندی ۶ صبح"""
+    """مدیریت هوشمند انتخاب موضوع و جلوگیری از تداخل پیام‌ها"""
     try:
         # ۱. دریافت پیشرفت و اطلاعات دسترسی
         user_progress = get_user_topic_progress(user_id, topic_id)
@@ -102,8 +100,8 @@ def handle_category_selection(chat_id, user_id, topic_id):
         completed_days = user_progress.get("completed_days", [])
         topic_info = get_topic_by_id(topic_id)
 
-        # ۲. بررسی: آیا کاربر امروز قبلاً تمرین رو انجام داده؟
-        # اگر دسترسی نداشته باشه و روز فعلی منهای یک در لیست انجام شده‌ها باشه
+        # ۲. بررسی وضعیت "امروز انجام شده"
+        # اگر دسترسی False باشد و روز فعلی منهای یک قبلاً تکمیل شده باشد
         if not access_info["has_access"] and (current_day - 1) in completed_days:
             last_done = current_day - 1
             message = f"""
@@ -124,24 +122,24 @@ def handle_category_selection(chat_id, user_id, topic_id):
                 ]
             }
             send_message(chat_id, message, keyboard)
-            return
+            return  # خروج فوری برای جلوگیری از اجرای کدهای بعدی و ارسال پیام خطا
 
-        # ۳. لود کردن محتوا (اگر دسترسی دارد یا اولین بار است)
+        # ۳. لود محتوای جدید
         if not user_progress.get("started", False):
             content = start_topic_for_user(user_id, topic_id)
         else:
             content = load_day_content(topic_id, current_day, user_id)
 
         if not content:
-            send_message(chat_id, "❌ خطا در بارگذاری محتوا.")
+            send_message(chat_id, "❌ خطا در بارگذاری محتوای تمرین.")
             return
 
-        # ثبت زمان دسترسی در دیتابیس
+        # ثبت دسترسی
         daily_reset.record_access(user_id, topic_id, content['day_number'])
 
         # نمایش محتوای روز
         is_completed = content["day_number"] in completed_days
-        message = f"""
+        msg_text = f"""
 {content['topic_emoji'] * 3}
 <b>{content['week_title']}</b>
 📖 {content.get('author_quote', '')}
@@ -155,29 +153,34 @@ def handle_category_selection(chat_id, user_id, topic_id):
 {content['topic_emoji']} <b>۱۰ شکرگزاری امروز:</b>
 """
         for i, item in enumerate(content['items'][:10], 1):
-            message += f"\n{i}. {item}"
+            msg_text += f"\n{i}. {item}"
 
-        message += "\n──────────────\n"
+        msg_text += "\n──────────────\n"
         if content.get('exercise'):
-            message += f"💡 <b>تمرین:</b> {content['exercise']}\n\n"
+            msg_text += f"💡 <b>تمرین:</b> {content['exercise']}\n\n"
         
         if is_completed:
-            message += "✅ <b>این روز تکمیل شده است.</b>"
+            msg_text += "✅ <b>این روز تکمیل شده است.</b>"
         else:
-            message += "🙏 پس از انجام، دکمه زیر را بزنید:"
+            msg_text += "🙏 پس از انجام، دکمه زیر را بزنید:"
 
         inline_keyboard = GraphicsHandler.create_day_inline_keyboard(
             topic_id, content['day_number'], is_completed
         )
-        send_message(chat_id, message, inline_keyboard)
+        send_message(chat_id, msg_text, inline_keyboard)
         
-        # ارسال منوی سریع
-        markup_keyboard = GraphicsHandler.create_main_menu_keyboard()
-        send_message(chat_id, "🔽 منوی دسترسی:", markup_keyboard)
+        # ۴. ارسال منوی سریع (در یک بلاک جدا برای امنیت بیشتر)
+        try:
+            markup_keyboard = GraphicsHandler.create_main_menu_keyboard()
+            send_message(chat_id, "🔽 منوی دسترسی سریع:", markup_keyboard)
+        except Exception as e:
+            print(f"Menu keyboard error: {e}")
 
     except Exception as e:
+        print(f"❌ Error in handle_category_selection: {e}")
         traceback.print_exc()
-        send_message(chat_id, "⚠️ خطا در سیستم زمان‌بندی. لطفاً دوباره تلاش کنید.")
+        # فقط در صورتی که هیچ پیامی ارسال نشده باشد، پیام خطا می‌دهیم
+        send_message(chat_id, "⚠️ مشکلی در بارگذاری رخ داد. لطفاً دوباره تلاش کنید.")
 
 def handle_complete_day(chat_id, user_id, topic_id, day_number):
     if complete_day_for_user(user_id, topic_id, day_number):
@@ -185,9 +188,9 @@ def handle_complete_day(chat_id, user_id, topic_id, day_number):
         msg = f"✅ تبریک! روز {day_number} ثبت شد.\n\n⏰ تمرین بعدی: فردا ساعت ۶ صبح\n⏳ زمان باقی‌مانده: {access_info['remaining_text']}"
         send_message(chat_id, msg, GraphicsHandler.create_main_menu_keyboard())
     else:
-        send_message(chat_id, "✅ این روز قبلاً ثبت شده بود.")
+        send_message(chat_id, "✅ این روز قبلاً ثبت شده است.")
 
-# ========== حلقه اصلی (Polling) ==========
+# ========== حلقه Polling ==========
 
 def start_polling():
     keep_alive()
@@ -212,7 +215,6 @@ def start_polling():
                         elif "موضوعات" in text or text == "/topics":
                             send_message(chat_id, "🎯 انتخاب موضوع:", GraphicsHandler.create_categories_keyboard())
                         else:
-                            # تشخیص کلیک دکمه‌های منوی اصلی (متنی)
                             topics = get_all_topics()
                             for t in topics:
                                 if t['name'] in text:
@@ -234,11 +236,11 @@ def start_polling():
                             p = data.split("_")
                             handle_complete_day(chat_id, user_id, int(p[1]), int(p[2]))
                         elif data == "support_developer":
-                            send_message(chat_id, "💖 ممنون از نیت خیر شما. سیستم پرداخت در حال بروزرسانی است.")
+                            send_message(chat_id, "💖 ممنون از نیت خیر شما. سیستم حمایت مالی در حال بروزرسانی است.")
 
             time.sleep(1)
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error in main loop: {e}")
             time.sleep(5)
 
 if __name__ == "__main__":
