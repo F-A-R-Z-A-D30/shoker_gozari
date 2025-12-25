@@ -4,7 +4,7 @@ import os
 from typing import Dict, Any, List
 from pymongo import MongoClient
 
-# --- اتصال به MongoDB (بدون تغییر) ---
+# --- اتصال به MongoDB ---
 MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 db = client['shoker_gozari_db']
@@ -21,11 +21,12 @@ TOPICS = {
     8: {"name": "عشق و معنویت", "folder": "love_spirituality", "emoji": "💖", "color": "#e84393", "image": "assets/love.png"}
 }
 
-# تابع کمکی برای پیدا کردن شماره هفته و روز
-def get_week_info(day_number: int):
-    week_number = ((day_number - 1) // 7) + 1
-    day_in_week = ((day_number - 1) % 7) + 1
-    return week_number, day_in_week
+WEEK_THEMES = {
+    1: {"title": "مبتدی: پایه شکرگزاری"},
+    2: {"title": "متوسط: عمق بخشیدن"},
+    3: {"title": "پیشرفته: تحول ذهنی"},
+    4: {"title": "استادی: سبک زندگی"}
+}
 
 class UserProgressManager:
     def get_topic_progress(self, user_id, topic_id):
@@ -47,6 +48,11 @@ class UserProgressManager:
         users_col.update_one({"user_id": str(user_id)}, {"$addToSet": {f"topics.{topic_key}.completed_days": day_number}, "$set": {f"topics.{topic_key}.current_day": next_day}}, upsert=True)
         return True
 
+def get_week_info(day_number: int):
+    week_number = ((day_number - 1) // 7) + 1
+    day_in_week = ((day_number - 1) % 7) + 1
+    return week_number, day_in_week
+
 def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dict[str, Any]:
     if topic_id not in TOPICS: topic_id = 1
     if user_id:
@@ -55,16 +61,13 @@ def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dic
     topic = TOPICS[topic_id]
     week_number, day_in_week = get_week_info(day_number)
     
-    # اصلاح مسیر لودینگ بر اساس ساختار پوشه‌بندی شما
-    module_path = f"static.content.{topic['folder']}.week_{week_number}"
+    # تنظیم مسیر دقیق بر اساس ساختار پوشه‌های محتوا در ریشه پروژه
+    module_path = f"content.{topic['folder']}.week_{week_number}"
     
     try:
-        # لود کردن ماژول هفته
         module = importlib.import_module(module_path)
-        # لود کردن متغیر روز (مثلاً day_1)
         day_data = getattr(module, f"day_{day_in_week}")
-        # لود کردن اطلاعات کلی هفته برای گرفتن عنوان
-        week_info = getattr(module, "WEEK_INFO", {"title": "تمرین شکرگزاری"})
+        week_info = getattr(module, "WEEK_INFO", WEEK_THEMES.get(week_number, {}))
 
         return {
             "success": True,
@@ -72,10 +75,10 @@ def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dic
             "topic_name": topic["name"],
             "topic_emoji": topic["emoji"],
             "day_number": day_number,
-            "week_title": week_info.get("title", "معجزه شکرگزاری"),
+            "week_title": week_info.get("title", "تمرین روزانه"),
             "author_quote": week_info.get("quote", "شکرگزاری کلید فراوانی است."),
             "intro": day_data.get("intro", ""),
-            "items": day_data.get("items", []), # این دقیقاً همان لیست ۱۰ تایی شماست
+            "items": day_data.get("items", []),
             "exercise": day_data.get("exercise", "")
         }
     except Exception as e:
@@ -86,12 +89,23 @@ def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dic
             "topic_emoji": topic["emoji"],
             "day_number": day_number,
             "week_title": "آموزش شکرگزاری",
-            "items": ["۱. بابت امروز شکرگزارم."],
-            "exercise": "لطفاً تمرینات را از دفترچه دنبال کنید."
+            "items": ["۱۰ مورد شکرگزاری در دفتر خود بنویسید."],
+            "exercise": "تمرین امروز را با تمرکز انجام دهید."
         }
 
-# سایر توابع (بدون تغییر)
-def complete_day_for_user(user_id, topic_id, day_number): return UserProgressManager().complete_day(user_id, topic_id, day_number)
-def get_all_topics(): return [{"id": tid, **info} for tid, info in TOPICS.items()]
-def get_topic_by_id(topic_id): return {"id": topic_id, **TOPICS[topic_id]} if topic_id in TOPICS else None
-def get_user_topic_progress(user_id, topic_id): return UserProgressManager().get_topic_progress(user_id, topic_id)
+# --- توابعی که در polling_bot.py استفاده می‌شوند ---
+def complete_day_for_user(user_id, topic_id, day_number):
+    return UserProgressManager().complete_day(user_id, topic_id, day_number)
+
+def get_all_topics():
+    return [{"id": tid, **info} for tid, info in TOPICS.items()]
+
+def get_topic_by_id(topic_id):
+    return {"id": topic_id, **TOPICS[topic_id]} if topic_id in TOPICS else None
+
+def get_user_topic_progress(user_id, topic_id):
+    return UserProgressManager().get_topic_progress(user_id, topic_id)
+
+def start_topic_for_user(user_id, topic_id):
+    """این همان تابعی است که خطای ImportError می‌داد"""
+    return load_day_content(topic_id, 1, user_id)
