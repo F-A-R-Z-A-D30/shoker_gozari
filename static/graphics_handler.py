@@ -1,22 +1,25 @@
 import sys
 import os
 
-# تنظیم مسیرها برای پیدا کردن loader.py
+# تنظیم مسیرها برای پیدا کردن loader.py در ریشه پروژه
 current_dir = os.path.dirname(os.path.abspath(__file__))
 root_path = os.path.dirname(current_dir)
 if root_path not in sys.path:
     sys.path.insert(0, root_path)
 
+# مدیریت هوشمند وارد کردن لودر
 try:
     from loader import get_all_topics, load_day_content
 except ImportError:
     try:
         from static.content.loader import get_all_topics, load_day_content
     except ImportError:
-        # اگر لودر کنار خود فایل است
-        import loader
-        get_all_topics = loader.get_all_topics
-        load_day_content = loader.load_day_content
+        try:
+            import loader
+            get_all_topics = loader.get_all_topics
+            load_day_content = loader.load_day_content
+        except Exception as e:
+            print(f"❌ GraphicsHandler could not import loader: {e}")
 
 class GraphicsHandler:
 
@@ -25,8 +28,10 @@ class GraphicsHandler:
         """ساخت پیام گرافیکی زیبا برای یک روز با فرمت HTML بله"""
         topics = get_all_topics()
         topic_id = None
+        
+        # پیدا کردن ID موضوع بر اساس نام
         for topic in topics:
-            if topic["name"] in topic_name: # استفاده از in برای تطبیق بهتر با ایموجی‌ها
+            if topic["name"] in topic_name:
                 topic_id = topic["id"]
                 break
 
@@ -44,19 +49,26 @@ class GraphicsHandler:
         if user_progress and "completed_days" in user_progress:
             is_completed = day_number in user_progress["completed_days"]
 
-        # استفاده از تگ‌های HTML به جای Markdown برای پایداری بیشتر در بله
+        # استخراج داده‌ها با استفاده از .get برای جلوگیری از KeyError
+        t_name = content.get('topic_name', 'موضوع')
+        w_title = content.get('week_title', 'تمرین روزانه')
+        a_quote = content.get('author_quote') or content.get('week_quote', 'شکرگزاری کلید فراوانی است.')
+        intro_text = content.get('intro', '')
+
         message = f"""
 {topic_emoji}
-<b>{content['topic_name']}</b>
-📅 روز {day_number} از ۲۸ • {content['week_title']}
+<b>{t_name}</b>
+📅 روز {day_number} از ۲۸ • {w_title}
 
-📖 <i>{content.get('author_quote', content.get('week_quote', ''))}</i>
+📖 <i>{a_quote}</i>
 
-{content['intro']}
+{intro_text}
 ──────────────
 {emoji} <b>۱۰ شکرگزاری امروز:</b>
 """
-        for i, item in enumerate(content["items"][:10], 1):
+        # اضافه کردن لیست موارد
+        items = content.get("items", [])
+        for i, item in enumerate(items[:10], 1):
             message += f"\n{i}. {item}"
 
         message += "\n──────────────\n"
@@ -92,7 +104,7 @@ class GraphicsHandler:
 
     @staticmethod
     def create_day_inline_keyboard(topic_id, day_number, is_completed=False):
-        """اصلاح باگ دکمه عشق و معنویت: یکسان‌سازی callback_data"""
+        """ساخت دکمه‌های شیشه‌ای زیر هر تمرین"""
         topics = get_all_topics()
         topic_emoji = "🙏"
         for topic in topics:
@@ -102,8 +114,6 @@ class GraphicsHandler:
 
         keyboard = {"inline_keyboard": []}
 
-        # حل مشکل: دکمه همیشه باید callback_data با پیشوند complete_ داشته باشد
-        # حتی اگر روز تمام شده باشد، تا ربات بتواند به درستی پاسخ دهد.
         button_text = "✅ این روز ثبت شده" if is_completed else f"{topic_emoji} امروز شکرگزار بودم"
         
         keyboard["inline_keyboard"].append([
