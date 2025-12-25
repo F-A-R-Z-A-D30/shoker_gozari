@@ -58,6 +58,25 @@ def send_message(chat_id, text, keyboard=None):
         print(f"❌ خطا در ارسال پیام: {e}")
         return None
 
+def send_photo(chat_id, photo_path, caption=None, keyboard=None):
+    """تابع جدید برای ارسال عکس به همراه متن و کیبورد"""
+    url = f"{BASE_URL}/sendPhoto"
+    data = {"chat_id": chat_id, "parse_mode": "HTML"}
+    
+    if caption:
+        data["caption"] = caption
+    if keyboard:
+        data["reply_markup"] = json.dumps(keyboard)
+        
+    try:
+        with open(photo_path, 'rb') as photo:
+            files = {'photo': photo}
+            response = requests.post(url, data=data, files=files, timeout=40)
+            return response.json()
+    except Exception as e:
+        print(f"❌ خطا در ارسال عکس: {e}")
+        return None
+
 def get_updates(last_update_id=0):
     url = f"{BASE_URL}/getUpdates"
     params = {"offset": last_update_id + 1, "timeout": 30, "limit": 100}
@@ -90,18 +109,15 @@ def handle_start(chat_id, user_id):
     send_message(chat_id, "🎯 برای شروع، یکی از گزینه‌های زیر را انتخاب کنید:", start_keyboard)
 
 def handle_category_selection(chat_id, user_id, topic_id):
-    """مدیریت هوشمند انتخاب موضوع و جلوگیری از تداخل پیام‌ها"""
+    """مدیریت هوشمند انتخاب موضوع با قابلیت ارسال عکس و متن ترکیبی"""
     try:
-        # ۱. دریافت پیشرفت و اطلاعات دسترسی
         user_progress = get_user_topic_progress(user_id, topic_id)
         access_info = daily_reset.get_access_info(user_id, topic_id)
-        
         current_day = user_progress.get("current_day", 1)
         completed_days = user_progress.get("completed_days", [])
         topic_info = get_topic_by_id(topic_id)
 
-        # ۲. بررسی وضعیت "امروز انجام شده"
-        # اگر دسترسی False باشد و روز فعلی منهای یک قبلاً تکمیل شده باشد
+        # ۱. بررسی وضعیت دسترسی (تکراری نبودن تمرین امروز)
         if not access_info["has_access"] and (current_day - 1) in completed_days:
             last_done = current_day - 1
             message = f"""
@@ -122,9 +138,9 @@ def handle_category_selection(chat_id, user_id, topic_id):
                 ]
             }
             send_message(chat_id, message, keyboard)
-            return  # خروج فوری برای جلوگیری از اجرای کدهای بعدی و ارسال پیام خطا
+            return
 
-        # ۳. لود محتوای جدید
+        # ۲. لود محتوای تمرین
         if not user_progress.get("started", False):
             content = start_topic_for_user(user_id, topic_id)
         else:
@@ -134,10 +150,10 @@ def handle_category_selection(chat_id, user_id, topic_id):
             send_message(chat_id, "❌ خطا در بارگذاری محتوای تمرین.")
             return
 
-        # ثبت دسترسی
+        # ۳. ثبت دسترسی در سیستم ریست روزانه
         daily_reset.record_access(user_id, topic_id, content['day_number'])
 
-        # نمایش محتوای روز
+        # ۴. آماده‌سازی متن پیام (کپشن)
         is_completed = content["day_number"] in completed_days
         msg_text = f"""
 {content['topic_emoji'] * 3}
@@ -164,12 +180,20 @@ def handle_category_selection(chat_id, user_id, topic_id):
         else:
             msg_text += "🙏 پس از انجام، دکمه زیر را بزنید:"
 
+        # ۵. آماده‌سازی کیبورد و مسیر عکس
         inline_keyboard = GraphicsHandler.create_day_inline_keyboard(
             topic_id, content['day_number'], is_completed
         )
-        send_message(chat_id, msg_text, inline_keyboard)
         
-        # ۴. ارسال منوی سریع (در یک بلاک جدا برای امنیت بیشتر)
+        image_path = topic_info.get("image") # مسیر عکس از loader.py
+
+        # ۶. ارسال هوشمند (اگر عکس بود با کپشن، اگر نه فقط پیام)
+        if image_path and os.path.exists(image_path):
+            send_photo(chat_id, image_path, caption=msg_text, keyboard=inline_keyboard)
+        else:
+            send_message(chat_id, msg_text, inline_keyboard)
+        
+        # ۷. ارسال منوی سریع
         try:
             markup_keyboard = GraphicsHandler.create_main_menu_keyboard()
             send_message(chat_id, "🔽 منوی دسترسی سریع:", markup_keyboard)
@@ -179,7 +203,6 @@ def handle_category_selection(chat_id, user_id, topic_id):
     except Exception as e:
         print(f"❌ Error in handle_category_selection: {e}")
         traceback.print_exc()
-        # فقط در صورتی که هیچ پیامی ارسال نشده باشد، پیام خطا می‌دهیم
         send_message(chat_id, "⚠️ مشکلی در بارگذاری رخ داد. لطفاً دوباره تلاش کنید.")
 
 def handle_complete_day(chat_id, user_id, topic_id, day_number):
