@@ -27,7 +27,7 @@ from daily_reset import daily_reset
 
 load_dotenv()
 BOT_TOKEN = os.getenv('BALE_BOT_TOKEN')
-PAYMENT_TOKEN = os.getenv('BALE_PROVIDER_TOKEN') # توکن پرداخت را در .env تعریف کن
+PAYMENT_TOKEN = os.getenv('BALE_PROVIDER_TOKEN') 
 BASE_URL = f"https://tapi.bale.ai/bot{BOT_TOKEN}"
 
 app = Flask('')
@@ -58,6 +58,28 @@ def send_message(chat_id, text, keyboard=None):
     except Exception as e:
         print(f"❌ خطا در ارسال پیام: {e}")
         return None
+
+def send_photo(chat_id, photo_path, caption=None, keyboard=None):
+    """ارسال تصویر به همراه متن و کیبورد"""
+    url = f"{BASE_URL}/sendPhoto"
+    payload = {"chat_id": chat_id, "parse_mode": "HTML"}
+    if caption:
+        payload["caption"] = caption
+    if keyboard:
+        payload["reply_markup"] = json.dumps(keyboard)
+    
+    try:
+        if os.path.exists(photo_path):
+            with open(photo_path, 'rb') as photo:
+                files = {'photo': photo}
+                response = requests.post(url, data=payload, files=files, timeout=40)
+                return response.json()
+        else:
+            print(f"⚠️ تصویر در مسیر یافت نشد: {photo_path}")
+            return send_message(chat_id, caption, keyboard)
+    except Exception as e:
+        print(f"❌ خطا در ارسال عکس: {e}")
+        return send_message(chat_id, caption, keyboard)
 
 def get_updates(last_update_id=0):
     url = f"{BASE_URL}/getUpdates"
@@ -116,7 +138,13 @@ def handle_category_selection(chat_id, user_id, topic_id):
         msg_text = GraphicsHandler.create_beautiful_message(topic_info['name'], content['day_number'], user_progress)
         inline_keyboard = GraphicsHandler.create_day_inline_keyboard(topic_id, content['day_number'], is_completed)
         
-        send_message(chat_id, msg_text, inline_keyboard)
+        # --- اصلاح بخش ارسال عکس ---
+        photo_path = topic_info.get("image")
+        if photo_path:
+            send_photo(chat_id, photo_path, caption=msg_text, keyboard=inline_keyboard)
+        else:
+            send_message(chat_id, msg_text, inline_keyboard)
+            
         send_message(chat_id, "🔽 منوی دسترسی سریع:", GraphicsHandler.create_main_menu_keyboard())
 
     except Exception as e:
@@ -188,7 +216,6 @@ def start_polling():
                             prog = get_user_topic_progress(user_id, t_id)
                             send_message(chat_id, f"📊 پیشرفت این موضوع: {len(prog.get('completed_days', []))} از ۲۸ روز.")
                         elif data == "support_developer":
-                            # ارسال فاکتور پرداخت بله
                             invoice_url = f"{BASE_URL}/sendInvoice"
                             invoice_data = {
                                 "chat_id": chat_id,
@@ -197,7 +224,7 @@ def start_polling():
                                 "payload": "support_payload",
                                 "provider_token": PAYMENT_TOKEN,
                                 "currency": "IRR",
-                                "prices": [{"label": "حمایت", "amount": 100000}] # ۱۰ هزار تومان
+                                "prices": [{"label": "حمایت", "amount": 100000}]
                             }
                             requests.post(invoice_url, json=invoice_data)
 
@@ -208,4 +235,3 @@ def start_polling():
 
 if __name__ == "__main__":
     start_polling()
-
