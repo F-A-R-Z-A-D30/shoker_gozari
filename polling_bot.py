@@ -45,7 +45,7 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "Bot is Running! 🚀"
+    return "✨ ربات معجزه شکرگزاری فعال است ✨"
 
 def run_web_server():
     port = int(os.environ.get('PORT', 10000))
@@ -108,6 +108,207 @@ def answer_callback(callback_id):
     except:
         pass
 
+# ========== توابع متن زیبا ==========
+
+def create_about_me_text():
+    """متن زیبا درباره توسعه‌دهنده"""
+    return """
+<b>🎭 درباره من</b>
+
+<blockquote>
+"هر آنچه امروز هستم، محصول قدردانی از داشته‌هایم است."
+</blockquote>
+
+<b>🧘🏻‍♂️ من فرزاد قجری هستم:</b>
+• توسعه‌دهنده این ربات شکرگزاری
+• معتقد به قدرت تغییر با شکرگزاری روزانه
+• بیش از ۵ سال تجربه در برنامه‌نویسی و توسعه
+
+<b>🎯 فلسفه این ربات:</b>
+ربات معجزه شکرگزاری، هدیه‌ای است برای تمرکز بر داشته‌هایمان. 
+بر اساس کتاب ارزشمند <b>"معجزه شکرگزاری" اثر راندا برن</b> طراحی شده است.
+
+<b>🌟 چرا این ربات را ساختم؟</b>
+چون باور دارم شکرگزاری می‌تواند زندگی هر فردی را متحول کند. 
+این ربات، همراهی است برای ۲۸ روز تمرین مستمر تا شکرگزاری 
+تبدیل به سبک زندگی شما شود.
+
+<b>💫 آرزویم:</b>
+امیدوارم این ربات جرقه‌ای باشد برای شروع تحولی بزرگ در زندگی شما.
+
+<pre>──────────────</pre>
+<b>🧠 جمله الهام‌بخش من:</b>
+<i>"شما تبدیل به آنچه شکرگزارش هستید، می‌شوید."</i>
+<pre>──────────────</pre>
+
+✨ شکرگزارم که هستی و این لحظات را با من سهیم می‌شوی ✨
+"""
+
+def create_support_text():
+    """متن زیبا برای بخش حمایت"""
+    return """
+<b>💝 حمایت از توسعه‌دهنده</b>
+
+<blockquote>
+"هر حمایت، انرژی ادامه دادن می‌دهد."
+</blockquote>
+
+<b>🌟 چرا حمایت شما مهم است؟</b>
+این ربات با عشق و زمان زیادی توسعه یافته و به صورت کاملاً <b>رایگان</b> 
+در اختیار شما قرار گرفته است. حمایت شما انگیزه‌ای است برای:
+• افزودن ویژگی‌های جدید
+• بهبود مستمر ربات
+• توسعه محتوای بیشتر
+
+<b>💳 نحوه حمایت در <b>بله</b>:</b>
+۱. ابتدا از منوی بله، بخش <b>«کیف پول»</b> را باز کنید
+۲. حساب خود را <b>شارژ</b> کنید (از درگاه بانکی)
+۳. سپس به ربات بازگردید و روی دکمه حمایت کلیک کنید
+۴. مبلغ مورد نظر خود را انتخاب و پرداخت کنید
+
+<b>💰 روش‌های دیگر حمایت:</b>
+• <b>کارت به کارت:</b>
+<code>۶۲۱۹-۸۶۱۰-۲۳۴۵-۶۷۸۹</code>
+(به نام فرزاد قجری)
+
+• <b>دریافت لینک پرداخت:</b> (روی دکمه زیر کلیک کنید)
+
+<pre>──────────────</pre>
+<b>🎁 در ازای حمایت شما:</b>
+• انرژی مثبت و دعای خیر
+• آرزوی بهترین‌ها برای شما
+• ادامه توسعه ربات با انگیزه بیشتر
+
+<pre>──────────────</pre>
+<b>🙏 سپاس از بودن شما</b>
+هر حمایت، حتی کوچک، نشانه‌ای از قدرشناسی شماست.
+"""
+
+def create_progress_text(user_id):
+    """متن زیبا و حرفه‌ای برای بخش پیشرفت"""
+    try:
+        all_topics = get_all_topics()
+        total_days = 28 * len(all_topics)
+        completed_days = 0
+        progress_details = ""
+        
+        for topic in all_topics:
+            progress = get_user_topic_progress(user_id, topic['id'])
+            topic_completed = len(progress.get("completed_days", []))
+            completed_days += topic_completed
+            
+            # محاسبه درصد برای هر موضوع
+            topic_percent = (topic_completed / 28) * 100 if 28 > 0 else 0
+            
+            # ساخت نوار پیشرفت زیبا
+            progress_bars = ""
+            filled = int(topic_percent / 10)
+            for i in range(10):
+                if i < filled:
+                    progress_bars += "▓"
+                else:
+                    progress_bars += "░"
+            
+            # ایموجی وضعیت
+            if topic_percent == 100:
+                status_emoji = "🏆"
+            elif topic_percent >= 75:
+                status_emoji = "🌟"
+            elif topic_percent >= 50:
+                status_emoji = "👍"
+            elif topic_percent >= 25:
+                status_emoji = "💪"
+            else:
+                status_emoji = "🌱"
+            
+            progress_details += f"""
+{status_emoji} <b>{topic['emoji']} {topic['name']}</b>
+{progress_bars} {topic_completed}/۲۸ روز
+<i>پیشرفت: {topic_percent:.1f}%</i>
+──────────────────
+"""
+        
+        # محاسبه درصد کلی
+        overall_percent = (completed_days / total_days) * 100 if total_days > 0 else 0
+        
+        # ایموجی وضعیت کلی
+        if overall_percent == 100:
+            overall_emoji = "👑"
+            overall_status = "<b>شما یک استاد شکرگزاری هستید!</b>"
+        elif overall_percent >= 75:
+            overall_emoji = "🎯"
+            overall_status = "<b>در آستانه استادی!</b>"
+        elif overall_percent >= 50:
+            overall_emoji = "✨"
+            overall_status = "<b>در میانه راه!</b>"
+        elif overall_percent >= 25:
+            overall_emoji = "🚀"
+            overall_status = "<b>شروع قدرتمند!</b>"
+        else:
+            overall_emoji = "🌱"
+            overall_status = "<b>تازه شروع کرده‌اید!</b>"
+        
+        # ساخت نوار پیشرفت کلی
+        overall_bars = ""
+        overall_filled = int(overall_percent / 10)
+        for i in range(10):
+            if i < overall_filled:
+                overall_bars += "█"
+            else:
+                overall_bars += "▒"
+        
+        progress_text = f"""
+<b>📊 نقشه سفر شکرگزاری شما</b>
+
+{progress_details}
+<b>{overall_emoji} پیشرفت کلی شما:</b>
+{overall_bars}
+<b>{completed_days} از {total_days} روز</b>
+<i>پیشرفت کلی: {overall_percent:.1f}%</i>
+
+<b>🎯 وضعیت فعلی:</b>
+{overall_status}
+
+<pre>──────────────────</pre>
+<b>💡 نکات تحلیلی:</b>
+"""
+        
+        # اضافه کردن نکات تحلیلی بر اساس پیشرفت
+        if overall_percent == 100:
+            progress_text += "✅ شما تمام مسیر را طی کرده‌اید!\n🌟 شکرگزاری در DNA شما جاری است.\n✨ به دیگران هم آموزش دهید!"
+        elif overall_percent >= 75:
+            progress_text += "✅ نزدیک به پایان هستید!\n🌟 ادامه دهید تا استاد شوید.\n✨ تمرین‌های هفته آخر عمیق‌ترین‌ها هستند."
+        elif overall_percent >= 50:
+            progress_text += "✅ نیمه راه را طی کرده‌اید!\n🌟 تغییرات را احساس می‌کنید.\n✨ هر روز عمیق‌تر از دیروز شکرگزاری کنید."
+        elif overall_percent >= 25:
+            progress_text += "✅ شروع خوبی داشته‌اید!\n🌟 عادت در حال شکل‌گیری است.\n✨ در هفته‌های آینده معجزه را خواهید دید."
+        else:
+            progress_text += "✅ اولین قدم‌ها را برداشته‌اید!\n🌟 مهم ترین بخش، شروع است.\n✨ ادامه دهید تا شاهد معجزه باشید."
+        
+        progress_text += """
+──────────────────
+<b>🎁 نکته طلایی:</b>
+<i>"پیشرفت مهم‌تر از سرعت است.
+هر روز یک قدم، شما را به مقصد می‌رساند."</i>
+──────────────────
+
+✨ <b>قدردان تلاش ارزشمند شما هستم</b> ✨
+"""
+        
+        return progress_text
+        
+    except Exception as e:
+        print(f"Error in progress calculation: {e}")
+        return """
+<b>📊 پیشرفت شما</b>
+
+🌟 در حال محاسبه پیشرفت شما هستم...
+لطفاً لحظاتی صبر کنید یا دوباره تلاش کنید.
+
+✨ <i>مهم نیست از کجا شروع کرده‌اید،
+مهم این است که شروع کرده‌اید.</i>
+"""
+
 # ========== منطق اصلی ربات ==========
 
 def handle_start(chat_id, user_id):
@@ -118,7 +319,8 @@ def handle_start(chat_id, user_id):
     start_keyboard = {
         "inline_keyboard": [
             [{"text": "🚀 شروع استفاده از ربات", "callback_data": "start_using"}],
-            [{"text": "💖 حمایت از توسعه‌دهنده", "callback_data": "support_developer"}]
+            [{"text": "💖 حمایت از توسعه‌دهنده", "callback_data": "support_developer"}],
+            [{"text": "🎭 درباره من", "callback_data": "about_me"}]
         ]
     }
     send_message(chat_id, "🎯 برای شروع، یکی از گزینه‌های زیر را انتخاب کنید:", start_keyboard)
@@ -199,9 +401,15 @@ def start_polling():
                         elif text == "👨‍💻 ارتباط با من":
                             send_message(chat_id, GraphicsHandler.create_contact_message())
                         elif text == "📊 پیشرفت کلی":
-                            all_topics = get_all_topics()
-                            total = sum([len(get_user_topic_progress(user_id, t['id']).get("completed_days", [])) for t in all_topics])
-                            send_message(chat_id, f"🌟 **پیشرفت کلی شما**\n\n✅ شما مجموعاً **{total}** روز را با موفقیت شکرگزاری کرده‌اید. عالیه!")
+                            # استفاده از تابع جدید پیشرفت
+                            progress_text = create_progress_text(user_id)
+                            send_message(chat_id, progress_text)
+                        elif text == "🎭 درباره من":
+                            about_text = create_about_me_text()
+                            send_message(chat_id, about_text)
+                        elif text == "💝 حمایت":
+                            support_text = create_support_text()
+                            send_message(chat_id, support_text)
                         else:
                             for t in get_all_topics():
                                 if t['name'] in text:
@@ -217,27 +425,64 @@ def start_polling():
 
                         if data in ["start_using", "categories"]:
                             send_message(chat_id, "🎯 انتخاب موضوع:", GraphicsHandler.create_categories_keyboard())
+                        elif data == "about_me":
+                            about_text = create_about_me_text()
+                            send_message(chat_id, about_text)
                         elif data.startswith("cat_"):
                             handle_category_selection(chat_id, user_id, int(data.split("_")[1]))
                         elif data.startswith("complete_"):
                             p = data.split("_")
                             handle_complete_day(chat_id, user_id, int(p[1]), int(p[2]))
                         elif data.startswith("progress_"):
-                            t_id = int(data.split("_")[1])
-                            prog = get_user_topic_progress(user_id, t_id)
-                            send_message(chat_id, f"📊 پیشرفت این موضوع: {len(prog.get('completed_days', []))} از ۲۸ روز.")
+                            # استفاده از تابع جدید پیشرفت
+                            progress_text = create_progress_text(user_id)
+                            send_message(chat_id, progress_text)
                         elif data == "support_developer":
-                            invoice_url = f"{BASE_URL}/sendInvoice"
-                            invoice_data = {
-                                "chat_id": chat_id,
-                                "title": "حمایت از توسعه‌دهنده",
-                                "description": "حمایت مالی برای بهبود ربات شکرگزاری",
-                                "payload": "support_payload",
-                                "provider_token": PAYMENT_TOKEN,
-                                "currency": "IRR",
-                                "prices": [{"label": "حمایت", "amount": 100000}]
+                            # ارسال متن حمایت زیبا
+                            support_text = create_support_text()
+                            support_keyboard = {
+                                "inline_keyboard": [
+                                    [{"text": "💳 پرداخت در بله", "callback_data": "payment_in_bale"}],
+                                    [{"text": "🔙 بازگشت", "callback_data": "main_menu"}]
+                                ]
                             }
-                            requests.post(invoice_url, json=invoice_data)
+                            send_message(chat_id, support_text, support_keyboard)
+                        elif data == "payment_in_bale":
+                            if PAYMENT_TOKEN:
+                                # ایجاد فاکتور پرداخت
+                                invoice_url = f"{BASE_URL}/sendInvoice"
+                                invoice_data = {
+                                    "chat_id": chat_id,
+                                    "title": "🏆 حمایت از توسعه‌دهنده ربات شکرگزاری",
+                                    "description": "حمایت مالی برای ادامه توسعه و بهبود ربات معجزه شکرگزاری\n\n💝 هر میزان حمایت شما قدردانی می‌شود.",
+                                    "payload": "support_payment",
+                                    "provider_token": PAYMENT_TOKEN,
+                                    "currency": "IRR",
+                                    "prices": [
+                                        {"label": "🌱 حمایت تشویقی", "amount": 100000},
+                                        {"label": "💫 حمایت ویژه", "amount": 500000},
+                                        {"label": "🌟 حمایت استثنایی", "amount": 1000000}
+                                    ],
+                                    "suggested_tip_amounts": [100000, 500000, 1000000],
+                                    "photo_url": "https://example.com/support.jpg",  # اگر عکس دارید
+                                    "need_name": False,
+                                    "need_phone_number": False,
+                                    "need_email": False,
+                                    "need_shipping_address": False,
+                                    "is_flexible": False
+                                }
+                                try:
+                                    response = requests.post(invoice_url, json=invoice_data)
+                                    if response.status_code == 200:
+                                        print(f"✅ Invoice sent to {user_id}")
+                                    else:
+                                        print(f"❌ Failed to send invoice: {response.text}")
+                                        send_message(chat_id, "⚠️ در حال حاضر امکان پرداخت وجود ندارد. لطفاً از روش کارت به کارت استفاده کنید.")
+                                except Exception as e:
+                                    print(f"❌ Error sending invoice: {e}")
+                                    send_message(chat_id, "⚠️ خطایی در ایجاد درگاه پرداخت رخ داد.")
+                            else:
+                                send_message(chat_id, "⚠️ درگاه پرداخت فعال نیست. لطفاً از روش کارت به کارت استفاده کنید.")
 
             time.sleep(0.5)
         except Exception as e:
