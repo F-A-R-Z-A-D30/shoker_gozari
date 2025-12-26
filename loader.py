@@ -17,7 +17,7 @@ TOPICS = {
         "emoji": "💚", 
         "color": "#2ecc71", 
         "image": "assets/health.png",
-        "description": "📈 <b>سلامت کامل جسم و روان</b>\nشکرگزاری برای نعمت سلامتی که زندگی را ممکن می‌کند."
+        "description": "📈 سلامت کامل جسم و روان\nشکرگزاری برای نعمت سلامتی که زندگی را ممکن می‌کند."
     },
     2: {
         "name": "خانواده و روابط", 
@@ -25,7 +25,7 @@ TOPICS = {
         "emoji": "👨‍👩‍👧‍👦", 
         "color": "#e74c3c", 
         "image": "assets/family.png",
-        "description": "❤️ <b>پیوندهای انسانی ارزشمند</b>\nقدردانی از عشق و حمایت اطرافیان."
+        "description": "❤️ پیوندهای انسانی ارزشمند\nقدردانی از عشق و حمایت اطرافیان."
     },
     3: {
         "name": "ثروت و فراوانی", 
@@ -33,7 +33,7 @@ TOPICS = {
         "emoji": "💰", 
         "color": "#f1c40f", 
         "image": "assets/wealth.png",
-        "description": "🌟 <b>نعمت‌های مالی و فراوانی</b>\nشکرگزاری برای رفاه و امنیت اقتصادی."
+        "description": "🌟 نعمت‌های مالی و فراوانی\nشکرگزاری برای رفاه و امنیت اقتصادی."
     },
     4: {
         "name": "شادی و آرامش", 
@@ -41,7 +41,7 @@ TOPICS = {
         "emoji": "😊", 
         "color": "#3498db", 
         "image": "assets/happiness.png",
-        "description": "✨ <b>لحظات شاد و صلح درون</b>\nقدردانی از آرامش و شادی‌های کوچک زندگی."
+        "description": "✨ لحظات شاد و صلح درون\nقدردانی از آرامش و شادی‌های کوچک زندگی."
     },
     5: {
         "name": "اهداف و موفقیت", 
@@ -49,7 +49,7 @@ TOPICS = {
         "emoji": "🎯", 
         "color": "#e67e22", 
         "image": "assets/goals.png",
-        "description": "🚀 <b>رشد، پیشرفت و دستاوردها</b>\nشکرگزاری برای هر قدم به سوی هدف."
+        "description": "🚀 رشد، پیشرفت و دستاوردها\nشکرگزاری برای هر قدم به سوی هدف."
     },
     6: {
         "name": "زندگی مطلوب", 
@@ -57,7 +57,7 @@ TOPICS = {
         "emoji": "🏠", 
         "color": "#9b59b6", 
         "image": "assets/quality.png",
-        "description": "🏡 <b>امکانات و رفاه زندگی</b>\nقدردانی از خانه، شغل و امکانات رفاهی."
+        "description": "🏡 امکانات و رفاه زندگی\nقدردانی از خانه، شغل و امکانات رفاهی."
     },
     7: {
         "name": "طبیعت و کائنات", 
@@ -65,7 +65,7 @@ TOPICS = {
         "emoji": "🌿", 
         "color": "#27ae60", 
         "image": "assets/nature.png",
-        "description": "🌍 <b>زیبایی‌های آفرینش</b>\nشکرگزاری برای طبیعت، هوا و آب."
+        "description": "🌍 زیبایی‌های آفرینش\nشکرگزاری برای طبیعت، هوا و آب."
     },
     8: {
         "name": "عشق و معنویت", 
@@ -73,26 +73,26 @@ TOPICS = {
         "emoji": "💖", 
         "color": "#e84393", 
         "image": "assets/love.png",
-        "description": "🙏 <b>عشق الهی و رشد معنوی</b>\nقدردانی از عشق درون و معنویت زندگی."
+        "description": "🙏 عشق الهی و رشد معنوی\nقدردانی از عشق درون و معنویت زندگی."
     }
 }
 
 WEEK_THEMES = {
     1: {
-        "title": "🏁 <b>مبتدی: پایه شکرگزاری</b>",
-        "quote": "📖 <i>«شکرگزاری ساده‌ترین راه برای جذب خوبی‌هاست.»</i>\n   - راندا برن"
+        "title": "🏁 مبتدی: پایه شکرگزاری",
+        "quote": "📖 «شکرگزاری ساده‌ترین راه برای جذب خوبی‌هاست.»\n   - راندا برن"
     },
     2: {
-        "title": "📈 <b>متوسط: عمق بخشیدن</b>",
-        "quote": "💎 <i>«هر چه عمیق‌تر شکرگزاری کنید، معجزه بزرگ‌تری رخ می‌دهد.»</i>\n   - راندا برن"
+        "title": "📈 متوسط: عمق بخشیدن",
+        "quote": "💎 «هر چه عمیق‌تر شکرگزاری کنید، معجزه بزرگ‌تری رخ می‌دهد.»\n   - راندا برن"
     },
     3: {
-        "title": "🚀 <b>پیشرفته: تحول ذهنی</b>",
-        "quote": "🧠 <i>«ذهن شکرگزار، ذهن فراوانی است.»</i>\n   - راندا برن"
+        "title": "🚀 پیشرفته: تحول ذهنی",
+        "quote": "🧠 «ذهن شکرگزار، ذهن فراوانی است.»\n   - راندا برن"
     },
     4: {
-        "title": "👑 <b>استادی: سبک زندگی</b>",
-        "quote": "🌟 <i>«شما تبدیل به آنچه شکرگزارش هستید، می‌شوید.»</i>\n   - راندا برن"
+        "title": "👑 استادی: سبک زندگی",
+        "quote": "🌟 «شما تبدیل به آنچه شکرگزارش هستید، می‌شوید.»\n   - راندا برن"
     }
 }
 
@@ -162,14 +162,14 @@ def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dic
             "day_number": day_number,
             "week_number": week_number,
             "day_in_week": day_in_week,
-            "week_title": week_info.get("title", "🧘‍♂️ <b>تمرین روزانه شکرگزاری</b>"),
-            "author_quote": week_info.get("quote", "💫 <i>«شکرگزاری کلید تحول زندگی است.»</i>"),
+            "week_title": week_info.get("title", "🧘‍♂️ تمرین روزانه شکرگزاری"),
+            "author_quote": week_info.get("quote", "💫 «شکرگزاری کلید تحول زندگی است.»"),
             "intro": day_data.get("intro", "🌟 امروز را با شکرگزاری شروع می‌کنیم..."),
             "items": day_data.get("items", []),
             "exercise": day_data.get("exercise", "📝 تمرین امروز را با دقت انجام دهید.")
         }
     except ModuleNotFoundError as e:
-        print(f"❌ <b>خطا در بارگذاری محتوا:</b> {e}")
+        print(f"❌ خطا در بارگذاری محتوا: {e}")
         return {
             "success": False,
             "error_message": "⚠️ محتوای مورد نظر موقتاً در دسترس نیست.",
@@ -177,8 +177,8 @@ def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dic
             "topic_emoji": topic["emoji"],
             "topic_description": topic.get("description", ""),
             "day_number": day_number,
-            "week_title": "🔄 <b>در حال آماده‌سازی محتوا</b>",
-            "author_quote": "✨ <i>«صبر و شکرگزاری، هر دو لازمند.»</i>",
+            "week_title": "🔄 در حال آماده‌سازی محتوا",
+            "author_quote": "✨ «صبر و شکرگزاری، هر دو لازمند.»",
             "items": [
                 "✅ ۱. برای سلامتی خود شکرگزار باشید",
                 "✅ ۲. برای خانواده و دوستان شکرگزار باشید", 
@@ -194,19 +194,19 @@ def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dic
             "exercise": "📖 این ۱۰ مورد را در دفتر شکرگزاری خود بنویسید و هر کدام را با احساس قدردانی تکرار کنید."
         }
     except Exception as e:
-        print(f"⚠️ <b>خطای عمومی:</b> {e}")
+        print(f"⚠️ خطای عمومی: {e}")
         return {
             "success": False,
             "topic_name": topic["name"],
             "topic_emoji": topic["emoji"],
             "day_number": day_number,
-            "week_title": "⚡ <b>تمرین اضطراری شکرگزاری</b>",
+            "week_title": "⚡ تمرین اضطراری شکرگزاری",
             "items": ["🌟 امروز ۱۰ بار جمله «خدایا شکرت» را با احساس عمیق تکرار کنید."],
             "exercise": "🙏 این تمرین ساده را با تمام وجود انجام دهید."
         }
 
 def load_past_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dict[str, Any]:
-    """لود محتوای روزهای گذشته برای مرور (بدون محدودیت زمانی و بدون به‌روزرسانی روز جاری کاربر)"""
+    """لود محتوای روزهای گذشته برای مرور"""
     if topic_id not in TOPICS: 
         topic_id = 1
 
@@ -230,33 +230,33 @@ def load_past_day_content(topic_id: int, day_number: int, user_id: str = None) -
             "day_number": day_number,
             "week_number": week_number,
             "day_in_week": day_in_week,
-            "week_title": week_info.get("title", "🧘‍♂️ <b>مرور تمرین گذشته</b>"),
-            "author_quote": week_info.get("quote", "💫 <i>«مرور شکرگزاری‌ها، معجزه را تازه می‌کند.»</i>"),
+            "week_title": week_info.get("title", "🧘‍♂️ مرور تمرین گذشته"),
+            "author_quote": week_info.get("quote", "💫 «مرور شکرگزاری‌ها، معجزه را تازه می‌کند.»"),
             "intro": day_data.get("intro", "🌟 امروز را با مرور شکرگزاری‌های گذشته آغاز می‌کنیم..."),
             "items": day_data.get("items", []),
             "exercise": day_data.get("exercise", "📝 این تمرین را یکبار دیگر با دقت مرور کنید.")
         }
     except ModuleNotFoundError as e:
-        print(f"❌ <b>خطا در بارگذاری محتوای گذشته:</b> {e}")
+        print(f"❌ خطا در بارگذاری محتوای گذشته: {e}")
         return {
             "success": False,
             "error_message": "⚠️ محتوای مورد نظر برای مرور موقتاً در دسترس نیست.",
             "topic_name": topic["name"],
             "topic_emoji": topic["emoji"],
             "day_number": day_number,
-            "week_title": "🔄 <b>مرور تمرین گذشته</b>",
-            "author_quote": "✨ <i>«حتی خاطره شکرگزاری هم برکت دارد.»</i>",
+            "week_title": "🔄 مرور تمرین گذشته",
+            "author_quote": "✨ «حتی خاطره شکرگزاری هم برکت دارد.»",
             "items": ["🌟 امروز ۱۰ مورد از شکرگزاری‌های گذشته خود را مرور کنید."],
             "exercise": "🙏 با احساس قدردانی، روزهای گذشته را مرور کنید."
         }
     except Exception as e:
-        print(f"⚠️ <b>خطای عمومی در مرور گذشته:</b> {e}")
+        print(f"⚠️ خطای عمومی در مرور گذشته: {e}")
         return {
             "success": False,
             "topic_name": topic["name"],
             "topic_emoji": topic["emoji"],
             "day_number": day_number,
-            "week_title": "⚡ <b>مرور اضطراری</b>",
+            "week_title": "⚡ مرور اضطراری",
             "items": ["🌟 امروز ۱۰ بار جمله «خدایا شکرت» را با احساس عمیق تکرار کنید."],
             "exercise": "🙏 این تمرین ساده را با تمام وجود انجام دهید."
         }
