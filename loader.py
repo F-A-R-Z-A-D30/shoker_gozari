@@ -145,7 +145,6 @@ def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dic
     topic = TOPICS[topic_id]
     week_number, day_in_week = get_week_info(day_number)
     
-    # تنظیم مسیر دقیق بر اساس ساختار پوشه‌های محتوا
     module_path = f"content.{topic['folder']}.week_{week_number}"
     
     try:
@@ -153,7 +152,6 @@ def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dic
         day_data = getattr(module, f"day_{day_in_week}")
         week_info = getattr(module, "WEEK_INFO", WEEK_THEMES.get(week_number, {}))
 
-        # متن‌های حرفه‌ای و زیبا
         return {
             "success": True,
             "topic_id": topic_id,
@@ -207,61 +205,74 @@ def load_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dic
             "exercise": "🙏 این تمرین ساده را با تمام وجود انجام دهید."
         }
 
-# --- توابع اصلی ---
+def load_past_day_content(topic_id: int, day_number: int, user_id: str = None) -> Dict[str, Any]:
+    """لود محتوای روزهای گذشته برای مرور (بدون محدودیت زمانی و بدون به‌روزرسانی روز جاری کاربر)"""
+    if topic_id not in TOPICS: 
+        topic_id = 1
+
+    topic = TOPICS[topic_id]
+    week_number, day_in_week = get_week_info(day_number)
+    
+    module_path = f"content.{topic['folder']}.week_{week_number}"
+    
+    try:
+        module = importlib.import_module(module_path)
+        day_data = getattr(module, f"day_{day_in_week}")
+        week_info = getattr(module, "WEEK_INFO", WEEK_THEMES.get(week_number, {}))
+
+        return {
+            "success": True,
+            "topic_id": topic_id,
+            "topic_name": topic["name"],
+            "topic_emoji": topic["emoji"],
+            "topic_description": topic.get("description", ""),
+            "topic_color": topic["color"],
+            "day_number": day_number,
+            "week_number": week_number,
+            "day_in_week": day_in_week,
+            "week_title": week_info.get("title", "🧘‍♂️ <b>مرور تمرین گذشته</b>"),
+            "author_quote": week_info.get("quote", "💫 <i>«مرور شکرگزاری‌ها، معجزه را تازه می‌کند.»</i>"),
+            "intro": day_data.get("intro", "🌟 امروز را با مرور شکرگزاری‌های گذشته آغاز می‌کنیم..."),
+            "items": day_data.get("items", []),
+            "exercise": day_data.get("exercise", "📝 این تمرین را یکبار دیگر با دقت مرور کنید.")
+        }
+    except ModuleNotFoundError as e:
+        print(f"❌ <b>خطا در بارگذاری محتوای گذشته:</b> {e}")
+        return {
+            "success": False,
+            "error_message": "⚠️ محتوای مورد نظر برای مرور موقتاً در دسترس نیست.",
+            "topic_name": topic["name"],
+            "topic_emoji": topic["emoji"],
+            "day_number": day_number,
+            "week_title": "🔄 <b>مرور تمرین گذشته</b>",
+            "author_quote": "✨ <i>«حتی خاطره شکرگزاری هم برکت دارد.»</i>",
+            "items": ["🌟 امروز ۱۰ مورد از شکرگزاری‌های گذشته خود را مرور کنید."],
+            "exercise": "🙏 با احساس قدردانی، روزهای گذشته را مرور کنید."
+        }
+    except Exception as e:
+        print(f"⚠️ <b>خطای عمومی در مرور گذشته:</b> {e}")
+        return {
+            "success": False,
+            "topic_name": topic["name"],
+            "topic_emoji": topic["emoji"],
+            "day_number": day_number,
+            "week_title": "⚡ <b>مرور اضطراری</b>",
+            "items": ["🌟 امروز ۱۰ بار جمله «خدایا شکرت» را با احساس عمیق تکرار کنید."],
+            "exercise": "🙏 این تمرین ساده را با تمام وجود انجام دهید."
+        }
+
+# --- توابعی که در polling_bot.py استفاده می‌شوند ---
 def complete_day_for_user(user_id, topic_id, day_number):
-    """✅ <b>ثبت موفقیت‌آمیز روز</b>"""
-    result = UserProgressManager().complete_day(user_id, topic_id, day_number)
-    print(f"📝 <b>روز ثبت شد:</b> کاربر {user_id} - موضوع {topic_id} - روز {day_number}")
-    return result
+    return UserProgressManager().complete_day(user_id, topic_id, day_number)
 
 def get_all_topics():
-    """📚 <b>لیست کامل موضوعات شکرگزاری</b>"""
-    topics_list = []
-    for tid, info in TOPICS.items():
-        topic_info = {
-            "id": tid,
-            "name": info["name"],
-            "emoji": info["emoji"],
-            "folder": info["folder"],
-            "color": info["color"],
-            "image": info["image"],
-            "description": info.get("description", "")
-        }
-        topics_list.append(topic_info)
-    
-    print(f"📋 <b>موضوعات بارگذاری شد:</b> {len(topics_list)} موضوع")
-    return topics_list
+    return [{"id": tid, **info} for tid, info in TOPICS.items()]
 
 def get_topic_by_id(topic_id):
-    """🎯 <b>دریافت اطلاعات موضوع</b>"""
-    if topic_id in TOPICS:
-        topic_info = {
-            "id": topic_id,
-            "name": TOPICS[topic_id]["name"],
-            "emoji": TOPICS[topic_id]["emoji"],
-            "folder": TOPICS[topic_id]["folder"],
-            "color": TOPICS[topic_id]["color"],
-            "image": TOPICS[topic_id]["image"],
-            "description": TOPICS[topic_id].get("description", "")
-        }
-        return topic_info
-    return None
+    return {"id": topic_id, **TOPICS[topic_id]} if topic_id in TOPICS else None
 
 def get_user_topic_progress(user_id, topic_id):
-    """📊 <b>دریافت پیشرفت کاربر</b>"""
-    progress = UserProgressManager().get_topic_progress(user_id, topic_id)
-    
-    # محاسبه درصد پیشرفت
-    completed_days = len(progress.get("completed_days", []))
-    progress_percent = (completed_days / 28) * 100 if 28 > 0 else 0
-    
-    progress["progress_percent"] = round(progress_percent, 1)
-    progress["completed_count"] = completed_days
-    progress["remaining_days"] = 28 - completed_days
-    
-    return progress
+    return UserProgressManager().get_topic_progress(user_id, topic_id)
 
 def start_topic_for_user(user_id, topic_id):
-    """🚀 <b>شروع موضوع جدید برای کاربر</b>"""
-    print(f"🎬 <b>شروع موضوع:</b> کاربر {user_id} - موضوع {topic_id}")
     return load_day_content(topic_id, 1, user_id)
