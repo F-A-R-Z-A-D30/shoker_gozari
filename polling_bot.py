@@ -404,6 +404,8 @@ def handle_support_developer(chat_id, user_id=None):
             {"label": "🌟 حمایت استثنایی (۱۰۰,۰۰۰ تومان)", "amount": 100000},
                 {"label": "✨ مبلغ دلخواه", "amount": 0}
         ],
+        "suggested_tip_amounts": [0, 0, 0],
+"is_flexible": True
     }
     try:
         response = requests.post(invoice_url, json=invoice_data)
