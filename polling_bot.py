@@ -404,8 +404,6 @@ def handle_support_developer(chat_id, user_id=None):
             {"label": "🌟 حمایت استثنایی (۱۰۰,۰۰۰ تومان)", "amount": 100000},
                 {"label": "✨ مبلغ دلخواه", "amount": 0}
         ],
-        "suggested_tip_amounts": [0, 0, 1000000, 0],
-        "is_flexible": True
     }
     try:
         response = requests.post(invoice_url, json=invoice_data)
@@ -499,4 +497,5 @@ def start_polling():
 
 if __name__ == "__main__":
     start_polling()
+
 
