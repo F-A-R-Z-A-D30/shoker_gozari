@@ -19,16 +19,17 @@ try:
         get_topic_by_id,
         start_topic_for_user, 
         complete_day_for_user, 
-        get_user_topic_progress
+        get_user_topic_progress,
+        load_past_day_content
     )
     print("✅ Loader imported successfully.")
 except ImportError as e:
     print(f"❌ Error importing loader: {e}")
-    # تلاش برای مسیر جایگزین در صورت نیاز
     try:
         from static.content.loader import (
             load_day_content, get_all_topics, get_topic_by_id,
-            start_topic_for_user, complete_day_for_user, get_user_topic_progress
+            start_topic_for_user, complete_day_for_user, get_user_topic_progress,
+            load_past_day_content
         )
     except:
         sys.exit(1)
@@ -111,7 +112,7 @@ def answer_callback(callback_id):
 # ========== توابع کمکی ==========
 
 def create_progress_text(user_id):
-    """📊 ساخت متن پیشرفت حرفه‌ای با درصد و ایموجی‌های جذاب"""
+    """📊 ساخت متن پیشرفت حرفه‌ای"""
     try:
         all_topics = get_all_topics()
         total_days = 28 * len(all_topics)
@@ -123,10 +124,8 @@ def create_progress_text(user_id):
             topic_completed = len(progress.get("completed_days", []))
             completed_days += topic_completed
             
-            # محاسبه درصد
             topic_percent = (topic_completed / 28) * 100 if 28 > 0 else 0
             
-            # انتخاب ایموجی بر اساس درصد
             if topic_percent == 100:
                 progress_emoji = "🏆"
                 status_text = "کامل شده!"
@@ -143,8 +142,7 @@ def create_progress_text(user_id):
                 progress_emoji = "🌱"
                 status_text = "شروع شده"
             
-            # ساخت نوار پیشرفت
-            filled_bars = int(topic_percent / 5)  # هر 5 درصد یک بلوک
+            filled_bars = int(topic_percent / 5)
             progress_bar = "█" * filled_bars + "░" * (20 - filled_bars)
             
             progress_details += f"""
@@ -154,10 +152,8 @@ def create_progress_text(user_id):
 ─────────────────
 """
         
-        # محاسبه درصد کلی
         overall_percent = (completed_days / total_days) * 100 if total_days > 0 else 0
         
-        # ایموجی وضعیت کلی
         if overall_percent == 100:
             overall_emoji = "👑"
             overall_status = "شما استاد شکرگزاری هستید!"
@@ -179,7 +175,6 @@ def create_progress_text(user_id):
             overall_status = "تازه شروع کرده‌اید!"
             motivation = "🌱 مهم‌ترین قدم را برداشته‌اید!"
         
-        # ساخت نوار پیشرفت کلی
         overall_filled = int(overall_percent / 5)
         overall_bar = "▓" * overall_filled + "░" * (20 - overall_filled)
         
@@ -230,7 +225,7 @@ def handle_start(chat_id, user_id):
     
     start_keyboard = {
         "inline_keyboard": [
-            [{"text": "🚀 شروع سفر ۲۸ روزه", "callback_data": "start_using"}],
+            [{"text": "🚀 شروع ربات معجزه ", "callback_data": "start_using"}],
             [{"text": "💝 حمایت از توسعه", "callback_data": "support_developer"}],
             [{"text": "📖 راهنما", "callback_data": "help"}]
         ]
@@ -256,7 +251,7 @@ def handle_category_selection(chat_id, user_id, topic_id):
 
 🎯 برای ادامه، موضوع جدیدی را انتخاب کنید.
 """
-            keyboard = {"inline_keyboard": [[{"text": "🎯 مشاهده موضوعات دیگر", "callback_data": "categories"}]]}
+            keyboard = GraphicsHandler.create_day_options_keyboard(topic_id, completed_days)
             send_message(chat_id, message, keyboard)
             return
 
@@ -269,9 +264,8 @@ def handle_category_selection(chat_id, user_id, topic_id):
         is_completed = content["day_number"] in completed_days
         
         msg_text = GraphicsHandler.create_beautiful_message(topic_info['name'], content['day_number'], user_progress)
-        inline_keyboard = GraphicsHandler.create_day_inline_keyboard(topic_id, content['day_number'], is_completed)
+        inline_keyboard = GraphicsHandler.create_day_inline_keyboard(topic_id, content['day_number'], is_completed, completed_days)
         
-        # ارسال عکس به همراه متن
         photo_path = topic_info.get("image")
         if photo_path and os.path.exists(photo_path):
             send_photo(chat_id, photo_path, caption=msg_text, keyboard=inline_keyboard)
@@ -285,19 +279,150 @@ def handle_category_selection(chat_id, user_id, topic_id):
         send_message(chat_id, "⚠️ <b>مشکل موقتی پیش آمد.</b>\nسیستم در حال به‌روزرسانی است.")
 
 def handle_complete_day(chat_id, user_id, topic_id, day_number):
-    if complete_day_for_user(user_id, topic_id, day_number):
-        access_info = daily_reset.get_access_info(user_id, topic_id)
-        msg = f"""
-✅ <b>تبریک!</b> روز <b>{day_number}</b> با موفقیت ثبت شد.
+    """ثبت تکمیل روز و ارسال پیام تبریک مجزا"""
+    try:
+        # 1. ابتدا روز را ثبت کن
+        if complete_day_for_user(user_id, topic_id, day_number):
+            # 2. دریافت اطلاعات موضوع
+            topic_info = get_topic_by_id(topic_id)
+            
+            # 3. دریافت اطلاعات دسترسی برای زمان باقی‌مانده
+            access_info = daily_reset.get_access_info(user_id, topic_id)
+            
+            # 4. ساخت پیام تبریک زیبا
+            msg = f"""
+🎉 <b>تبریک!</b>
 
-⏰ تمرین بعدی: فردا ساعت ۶ صبح
-⏳ زمان باقی‌مانده: <b>{access_info['remaining_text']}</b>
+✅ <b>تمرین امروز با موفقیت تکمیل شد</b>
 
-✨ ادامه دهید تا معجزه را ببینید!
+<b>{topic_info['emoji']} {topic_info['name']}</b>
+📅 <b>روز {day_number}</b> از ۲۸ ثبت گردید
+
+⏰ <b>تمرین بعدی:</b> فردا ساعت ۶ صبح
+⏳ <b>زمان باقی‌مانده:</b> {access_info['remaining_text']}
+
+✨ <i>شما یک قدم به تحول نزدیک‌تر شدید!
+ادامه دهید تا معجزه را ببینید...</i>
 """
-        send_message(chat_id, msg, GraphicsHandler.create_main_menu_keyboard())
-    else:
-        send_message(chat_id, "✅ <b>این روز قبلاً در سابقه شما ثبت شده است.</b>")
+            
+            # 5. ارسال پیام تبریک
+            send_message(chat_id, msg)
+            
+            # 6. بعد از 1 ثانیه، منوی ادامه را نمایش بده
+            time.sleep(1)
+            continue_keyboard = {
+                "inline_keyboard": [
+                    [{"text": "📅 روز بعد", "callback_data": f"cat_{topic_id}"}],
+                    [{"text": "🎯 موضوعات دیگر", "callback_data": "categories"}],
+                    [{"text": "📊 پیشرفت کلی", "callback_data": "overall_progress"}]
+                ]
+            }
+            send_message(chat_id, "🎯 <b>برای ادامه:</b>", continue_keyboard)
+            
+        else:
+            # اگر روز قبلاً ثبت شده بود
+            msg = f"""
+✅ <b>این روز قبلاً ثبت شده است</b>
+
+<b>📅 روز {day_number}</b> از ۲۸
+✨ <i>قدردان تعهد شما به شکرگزاری هستیم!</i>
+"""
+            send_message(chat_id, msg)
+            
+    except Exception as e:
+        print(f"❌ خطا در ثبت روز: {e}")
+        send_message(chat_id, "⚠️ <b>خطایی در ثبت روز رخ داد.</b>\nلطفاً مجدد تلاش کنید.")
+
+def handle_review_past_days(chat_id, user_id, topic_id):
+    """نمایش روزهای گذشته برای مرور"""
+    try:
+        user_progress = get_user_topic_progress(user_id, topic_id)
+        completed_days = user_progress.get("completed_days", [])
+        topic_info = get_topic_by_id(topic_id)
+        
+        if not completed_days:
+            message = f"""
+📚 <b>هنوز روزی برای مرور ندارید!</b>
+
+<b>{topic_info['emoji']} {topic_info['name']}</b>
+✨ اولین روز این موضوع را شروع کنید تا بتوانید بعداً مرور کنید.
+
+🎯 برای شروع روز اول، روی موضوع کلیک کنید.
+"""
+            send_message(chat_id, message)
+            return
+        
+        message = f"""
+📖 <b>مرور روزهای گذشته</b>
+
+<b>{topic_info['emoji']} {topic_info['name']}</b>
+✅ شما <b>{len(completed_days)}</b> روز را تکمیل کرده‌اید.
+
+✨ روزهایی که می‌توانید مرور کنید:
+"""
+        for day in sorted(completed_days):
+            message += f"\n📅 روز {day}"
+        
+        keyboard = GraphicsHandler.create_past_days_keyboard(topic_id, completed_days)
+        send_message(chat_id, message, keyboard)
+        
+    except Exception as e:
+        print(f"Error in review past days: {e}")
+        send_message(chat_id, "⚠️ خطایی در دریافت روزهای گذشته رخ داد.")
+
+def handle_show_past_day(chat_id, user_id, topic_id, day_number):
+    """نمایش محتوای یک روز گذشته برای مرور"""
+    try:
+        content = load_past_day_content(topic_id, day_number, user_id)
+        if not content or not content.get('success', True):
+            send_message(chat_id, "⚠️ محتوای این روز در دسترس نیست.")
+            return
+            
+        topic_info = get_topic_by_id(topic_id)
+        user_progress = get_user_topic_progress(user_id, topic_id)
+        completed_days = user_progress.get("completed_days", [])
+        is_completed = day_number in completed_days
+        
+        msg_text = GraphicsHandler.create_beautiful_message(topic_info['name'], day_number, user_progress)
+        keyboard = GraphicsHandler.create_review_keyboard(topic_id, day_number, completed_days)
+        
+        photo_path = topic_info.get("image")
+        if photo_path and os.path.exists(photo_path):
+            send_photo(chat_id, photo_path, caption=msg_text, keyboard=keyboard)
+        else:
+            send_message(chat_id, msg_text, keyboard)
+            
+    except Exception as e:
+        print(f"Error showing past day: {e}")
+        send_message(chat_id, "⚠️ خطایی در نمایش محتوا رخ داد.")
+
+def handle_support_developer(chat_id, user_id=None):
+    """هندلر حمایت توسعه‌دهنده"""
+    invoice_url = f"{BASE_URL}/sendInvoice"
+    invoice_data = {
+        "chat_id": chat_id,
+        "title": "💝 حمایت از توسعه‌دهنده",
+        "description": "✨ حمایت شما انگیزه ادامه توسعه این ربات است\n\n🎯 هر میزان حمایت، قدردانی می‌شود",
+        "payload": "support_payload",
+        "provider_token": PAYMENT_TOKEN,
+        "currency": "IRR",
+        "prices": [
+            {"label": "🌱 حمایت دوستانه", "amount": 10000},
+            {"label": "💫 حمایت ویژه", "amount": 50000},
+            {"label": "🌟 حمایت استثنایی", "amount": 100000},
+            {"label": "✨ مبلغ دلخواه", "amount": 0}
+        ],
+        "suggested_tip_amounts": [10000, 50000, 100000, 0],
+        "is_flexible": True
+    }
+    try:
+        response = requests.post(invoice_url, json=invoice_data)
+        if response.status_code != 200:
+            print(f"⚠️ خطا در ارسال فاکتور: {response.text}")
+            send_message(chat_id, "⚠️ در حال حاضر امکان پرداخت وجود ندارد. لطفاً از روش کارت به کارت استفاده کنید.")
+    except Exception as e:
+        print(f"❌ Error sending invoice: {e}")
+        send_message(chat_id, "⚠️ خطایی در ایجاد درگاه پرداخت رخ داد.")
 
 # ========== حلقه اصلی Polling ==========
 
@@ -330,6 +455,11 @@ def start_polling():
                         elif text == "📊 پیشرفت کلی":
                             progress_text = create_progress_text(user_id)
                             send_message(chat_id, progress_text)
+                        elif text == "💝 حمایت":
+                            handle_support_developer(chat_id, user_id)
+                        elif text == "overall_progress":
+                            progress_text = create_progress_text(user_id)
+                            send_message(chat_id, progress_text)
                         else:
                             for t in get_all_topics():
                                 if t['name'] in text:
@@ -353,31 +483,22 @@ def start_polling():
                             p = data.split("_")
                             handle_complete_day(chat_id, user_id, int(p[1]), int(p[2]))
                         elif data.startswith("progress_"):
-                            t_id = int(data.split("_")[1])
                             progress_text = create_progress_text(user_id)
                             send_message(chat_id, progress_text)
+                        elif data == "overall_progress":
+                            progress_text = create_progress_text(user_id)
+                            send_message(chat_id, progress_text)
+                        elif data.startswith("review_"):
+                            parts = data.split("_")
+                            topic_id = int(parts[1])
+                            handle_review_past_days(chat_id, user_id, topic_id)
+                        elif data.startswith("pastday_"):
+                            parts = data.split("_")
+                            topic_id = int(parts[1])
+                            day_number = int(parts[2])
+                            handle_show_past_day(chat_id, user_id, topic_id, day_number)
                         elif data == "support_developer":
-                            # پرداخت با مبلغ دلخواه - بدون اشاره به مبلغ خاص
-                            invoice_url = f"{BASE_URL}/sendInvoice"
-                            invoice_data = {
-                                "chat_id": chat_id,
-                                "title": "💝 حمایت از توسعه‌دهنده",
-                                "description": "✨ حمایت شما انگیزه ادامه توسعه این ربات است\n\n🎯 هر میزان حمایت، قدردانی می‌شود",
-                                "payload": "support_payload",
-                                "provider_token": PAYMENT_TOKEN,
-                                "currency": "IRR",
-                                "prices": [
-                                    {"label": "🌱 حمایت دوستانه", "amount": 10000},
-                                    {"label": "💫 حمایت ویژه", "amount": 50000},
-                                    {"label": "🌟 حمایت استثنایی", "amount": 100000},
-                                    {"label": "✨ مبلغ دلخواه", "amount": 0}  # برای انتخاب مبلغ دلخواه توسط کاربر
-                                ],
-                                "suggested_tip_amounts": [10000, 50000, 100000, 0],
-                                "is_flexible": True  # امکان وارد کردن مبلغ دلخواه
-                            }
-                            response = requests.post(invoice_url, json=invoice_data)
-                            if response.status_code != 200:
-                                print(f"⚠️ خطا در ارسال فاکتور: {response.text}")
+                            handle_support_developer(chat_id, user_id)
 
             time.sleep(0.5)
         except Exception as e:
