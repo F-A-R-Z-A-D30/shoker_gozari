@@ -146,9 +146,9 @@ def create_progress_text(user_id):
             progress_bar = "█" * filled_bars + "░" * (20 - filled_bars)
             
             progress_details += f"""
-<b>{progress_emoji} {topic['emoji']} {topic['name']}</b>
+{progress_emoji} {topic['emoji']} {topic['name']}
 {progress_bar}
-<b>{topic_percent:.1f}%</b> • {topic_completed}/۲۸ روز • {status_text}
+{topic_percent:.1f}% • {topic_completed}/۲۸ روز • {status_text}
 ─────────────────
 """
         
@@ -179,25 +179,25 @@ def create_progress_text(user_id):
         overall_bar = "▓" * overall_filled + "░" * (20 - overall_filled)
         
         progress_text = f"""
-<b>📈 نقشه سفر شکرگزاری شما</b>
+📈 نقشه سفر شکرگزاری شما
 
-<code>══════════════════════════════</code>
+══════════════════════════════
 
 {progress_details}
-<code>══════════════════════════════</code>
+══════════════════════════════
 
-<b>{overall_emoji} پیشرفت کلی:</b>
+{overall_emoji} پیشرفت کلی:
 {overall_bar}
-<b>{overall_percent:.1f}%</b> • {completed_days} از {total_days} روز
+{overall_percent:.1f}% • {completed_days} از {total_days} روز
 
-✨ <b>{overall_status}</b>
-💫 <i>{motivation}</i>
+✨ {overall_status}
+💫 {motivation}
 
-<code>══════════════════════════════</code>
+══════════════════════════════
 
-<b>🎯 نکته طلایی:</b>
-<i>"هر درصد، قدمی به سوی تحول است.
-شما در مسیر درست قرار دارید!"</i>
+🎯 نکته طلایی:
+"هر درصد، قدمی به سوی تحول است.
+شما در مسیر درست قرار دارید!"
 """
         
         return progress_text
@@ -205,15 +205,15 @@ def create_progress_text(user_id):
     except Exception as e:
         print(f"Error in progress calculation: {e}")
         return """
-<b>📊 پیشرفت شما</b>
+📊 پیشرفت شما
 
-<code>══════════════════════════════</code>
+══════════════════════════════
 
-<b>🔄 در حال محاسبه...</b>
+🔄 در حال محاسبه...
 
-<code>══════════════════════════════</code>
+══════════════════════════════
 
-<b>✨ مهم این است که شروع کرده‌اید!</b>
+✨ مهم این است که شروع کرده‌اید!
 """
 
 # ========== منطق اصلی ربات ==========
@@ -225,12 +225,12 @@ def handle_start(chat_id, user_id):
     
     start_keyboard = {
         "inline_keyboard": [
-            [{"text": "🚀 شروع ربات معجزه ", "callback_data": "start_using"}],
+            [{"text": "🚀 شروع سفر ۲۸ روزه", "callback_data": "start_using"}],
             [{"text": "💝 حمایت از توسعه", "callback_data": "support_developer"}],
             [{"text": "📖 راهنما", "callback_data": "help"}]
         ]
     }
-    send_message(chat_id, "✨ <b>انتخاب کنید:</b>", start_keyboard)
+    send_message(chat_id, "✨ انتخاب کنید:", start_keyboard)
 
 def handle_category_selection(chat_id, user_id, topic_id):
     try:
@@ -243,10 +243,10 @@ def handle_category_selection(chat_id, user_id, topic_id):
         if not access_info["has_access"] and (current_day - 1) in completed_days:
             last_done = current_day - 1
             message = f"""
-✅ <b>تمرین امروز تکمیل شد!</b>
+✅ تمرین امروز تکمیل شد!
 
-<b>{topic_info['emoji']} {topic_info['name']}</b>
-📅 روز <b>{last_done}</b> ثبت گردید.
+{topic_info['emoji']} {topic_info['name']}
+📅 روز {last_done} ثبت گردید.
 ⏳ تمرین بعدی: {access_info['remaining_text']}
 
 🎯 برای ادامه، موضوع جدیدی را انتخاب کنید.
@@ -257,7 +257,7 @@ def handle_category_selection(chat_id, user_id, topic_id):
 
         content = load_day_content(topic_id, current_day, user_id)
         if not content:
-            send_message(chat_id, "⚠️ <b>خطا در دریافت محتوا.</b>\nلطفاً لحظاتی بعد مجدد تلاش کنید.")
+            send_message(chat_id, "⚠️ خطا در دریافت محتوا.\nلطفاً لحظاتی بعد مجدد تلاش کنید.")
             return
 
         daily_reset.record_access(user_id, topic_id, content['day_number'])
@@ -272,43 +272,36 @@ def handle_category_selection(chat_id, user_id, topic_id):
         else:
             send_message(chat_id, msg_text, inline_keyboard)
             
-        send_message(chat_id, "👇 <b>منوی سریع:</b>", GraphicsHandler.create_main_menu_keyboard())
+        send_message(chat_id, "👇 منوی سریع:", GraphicsHandler.create_main_menu_keyboard())
 
     except Exception as e:
         traceback.print_exc()
-        send_message(chat_id, "⚠️ <b>مشکل موقتی پیش آمد.</b>\nسیستم در حال به‌روزرسانی است.")
+        send_message(chat_id, "⚠️ مشکل موقتی پیش آمد.\nسیستم در حال به‌روزرسانی است.")
 
 def handle_complete_day(chat_id, user_id, topic_id, day_number):
     """ثبت تکمیل روز و ارسال پیام تبریک مجزا"""
     try:
-        # 1. ابتدا روز را ثبت کن
         if complete_day_for_user(user_id, topic_id, day_number):
-            # 2. دریافت اطلاعات موضوع
             topic_info = get_topic_by_id(topic_id)
-            
-            # 3. دریافت اطلاعات دسترسی برای زمان باقی‌مانده
             access_info = daily_reset.get_access_info(user_id, topic_id)
             
-            # 4. ساخت پیام تبریک زیبا
             msg = f"""
-🎉 <b>تبریک!</b>
+🎉 تبریک!
 
-✅ <b>تمرین امروز با موفقیت تکمیل شد</b>
+✅ تمرین امروز با موفقیت تکمیل شد
 
-<b>{topic_info['emoji']} {topic_info['name']}</b>
-📅 <b>روز {day_number}</b> از ۲۸ ثبت گردید
+{topic_info['emoji']} {topic_info['name']}
+📅 روز {day_number} از ۲۸ ثبت گردید
 
-⏰ <b>تمرین بعدی:</b> فردا ساعت ۶ صبح
-⏳ <b>زمان باقی‌مانده:</b> {access_info['remaining_text']}
+⏰ تمرین بعدی: فردا ساعت ۶ صبح
+⏳ زمان باقی‌مانده: {access_info['remaining_text']}
 
-✨ <i>شما یک قدم به تحول نزدیک‌تر شدید!
-ادامه دهید تا معجزه را ببینید...</i>
+✨ شما یک قدم به تحول نزدیک‌تر شدید!
+ادامه دهید تا معجزه را ببینید...
 """
             
-            # 5. ارسال پیام تبریک
             send_message(chat_id, msg)
             
-            # 6. بعد از 1 ثانیه، منوی ادامه را نمایش بده
             time.sleep(1)
             continue_keyboard = {
                 "inline_keyboard": [
@@ -317,21 +310,20 @@ def handle_complete_day(chat_id, user_id, topic_id, day_number):
                     [{"text": "📊 پیشرفت کلی", "callback_data": "overall_progress"}]
                 ]
             }
-            send_message(chat_id, "🎯 <b>برای ادامه:</b>", continue_keyboard)
+            send_message(chat_id, "🎯 برای ادامه:", continue_keyboard)
             
         else:
-            # اگر روز قبلاً ثبت شده بود
             msg = f"""
-✅ <b>این روز قبلاً ثبت شده است</b>
+✅ این روز قبلاً ثبت شده است
 
-<b>📅 روز {day_number}</b> از ۲۸
-✨ <i>قدردان تعهد شما به شکرگزاری هستیم!</i>
+📅 روز {day_number} از ۲۸
+✨ قدردان تعهد شما به شکرگزاری هستیم!
 """
             send_message(chat_id, msg)
             
     except Exception as e:
         print(f"❌ خطا در ثبت روز: {e}")
-        send_message(chat_id, "⚠️ <b>خطایی در ثبت روز رخ داد.</b>\nلطفاً مجدد تلاش کنید.")
+        send_message(chat_id, "⚠️ خطایی در ثبت روز رخ داد.\nلطفاً مجدد تلاش کنید.")
 
 def handle_review_past_days(chat_id, user_id, topic_id):
     """نمایش روزهای گذشته برای مرور"""
@@ -342,9 +334,9 @@ def handle_review_past_days(chat_id, user_id, topic_id):
         
         if not completed_days:
             message = f"""
-📚 <b>هنوز روزی برای مرور ندارید!</b>
+📚 هنوز روزی برای مرور ندارید!
 
-<b>{topic_info['emoji']} {topic_info['name']}</b>
+{topic_info['emoji']} {topic_info['name']}
 ✨ اولین روز این موضوع را شروع کنید تا بتوانید بعداً مرور کنید.
 
 🎯 برای شروع روز اول، روی موضوع کلیک کنید.
@@ -353,10 +345,10 @@ def handle_review_past_days(chat_id, user_id, topic_id):
             return
         
         message = f"""
-📖 <b>مرور روزهای گذشته</b>
+📖 مرور روزهای گذشته
 
-<b>{topic_info['emoji']} {topic_info['name']}</b>
-✅ شما <b>{len(completed_days)}</b> روز را تکمیل کرده‌اید.
+{topic_info['emoji']} {topic_info['name']}
+✅ شما {len(completed_days)} روز را تکمیل کرده‌اید.
 
 ✨ روزهایی که می‌توانید مرور کنید:
 """
@@ -407,12 +399,12 @@ def handle_support_developer(chat_id, user_id=None):
         "provider_token": PAYMENT_TOKEN,
         "currency": "IRR",
         "prices": [
-            {"label": "🌱 حمایت دوستانه", "amount": 10000},
-            {"label": "💫 حمایت ویژه", "amount": 50000},
-            {"label": "🌟 حمایت استثنایی", "amount": 100000},
+            {"label": "🌱 حمایت دوستانه", "amount": 200000},
+            {"label": "💫 حمایت ویژه", "amount": 500000},
+            {"label": "🌟 حمایت استثنایی", "amount": 1000000},
             {"label": "✨ مبلغ دلخواه", "amount": 0}
         ],
-        "suggested_tip_amounts": [10000, 50000, 100000, 0],
+        "suggested_tip_amounts": [200000, 500000, 1000000, 0],
         "is_flexible": True
     }
     try:
@@ -447,7 +439,7 @@ def start_polling():
                         if text == "/start":
                             handle_start(chat_id, user_id)
                         elif "موضوعات" in text or text == "/topics" or text == "🎯 موضوعات شکرگزاری":
-                            send_message(chat_id, "🎯 <b>یک حوزه از زندگی خود را برای شکرگزاری انتخاب کنید:</b>", GraphicsHandler.create_categories_keyboard())
+                            send_message(chat_id, "🎯 یک حوزه از زندگی خود را برای شکرگزاری انتخاب کنید:", GraphicsHandler.create_categories_keyboard())
                         elif text == "❓ راهنما":
                             send_message(chat_id, GraphicsHandler.create_help_message())
                         elif text == "👨‍💻 ارتباط با من":
@@ -474,7 +466,7 @@ def start_polling():
                         answer_callback(cb["id"])
 
                         if data in ["start_using", "categories"]:
-                            send_message(chat_id, "🎯 <b>یک حوزه از زندگی خود را برای شکرگزاری انتخاب کنید:</b>", GraphicsHandler.create_categories_keyboard())
+                            send_message(chat_id, "🎯 یک حوزه از زندگی خود را برای شکرگزاری انتخاب کنید:", GraphicsHandler.create_categories_keyboard())
                         elif data == "help":
                             send_message(chat_id, GraphicsHandler.create_help_message())
                         elif data.startswith("cat_"):
