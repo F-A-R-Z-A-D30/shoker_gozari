@@ -9,15 +9,16 @@ if root_path not in sys.path:
 
 # مدیریت هوشمند وارد کردن لودر
 try:
-    from loader import get_all_topics, load_day_content
+    from loader import get_all_topics, load_day_content, load_past_day_content
 except ImportError:
     try:
-        from static.content.loader import get_all_topics, load_day_content
+        from static.content.loader import get_all_topics, load_day_content, load_past_day_content
     except ImportError:
         try:
             import loader
             get_all_topics = loader.get_all_topics
             load_day_content = loader.load_day_content
+            load_past_day_content = loader.load_past_day_content
         except Exception as e:
             print(f"✨ <b>GraphicsHandler: لودر یافت نشد</b>\n📝 {e}")
 
@@ -74,10 +75,8 @@ class GraphicsHandler:
         items = content.get("items", [])
         for i, item in enumerate(items[:10], 1):
             if is_completed:
-                # برای روزهای تکمیل شده از ✅ استفاده می‌کنیم
                 message += f"\n✅ {item}"
             else:
-                # برای روزهای تکمیل نشده از ایموجی موضوع استفاده می‌کنیم
                 message += f"\n{emoji} {item}"
 
         message += """
@@ -113,7 +112,6 @@ class GraphicsHandler:
 
         row = []
         for i, topic in enumerate(topics):
-            # 🎨 زیباسازی متن دکمه‌ها
             button_text = f"{topic['emoji']} {topic['name']}"
             row.append(button_text)
             
@@ -124,14 +122,13 @@ class GraphicsHandler:
         if row:
             keyboard["keyboard"].append(row)
 
-        # 🔧 دکمه‌های پایینی
         keyboard["keyboard"].append(["📊 پیشرفت کلی", "❓ راهنما"])
         keyboard["keyboard"].append(["👨‍💻 ارتباط با من", "💝 حمایت"])
         
         return keyboard
 
     @staticmethod
-    def create_day_inline_keyboard(topic_id, day_number, is_completed=False):
+    def create_day_inline_keyboard(topic_id, day_number, is_completed=False, completed_days=None):
         """🔘 ساخت دکمه‌های اینلاین زیبا"""
         topics = get_all_topics()
         topic_emoji = "🙏"
@@ -143,13 +140,10 @@ class GraphicsHandler:
 
         keyboard = {"inline_keyboard": []}
 
-        # 🎯 دکمه اصلی
         if is_completed:
             button_text = f"✅ روز {day_number} تکمیل شد"
-            button_emoji = "✅"
         else:
             button_text = f"{topic_emoji} امروز شکرگزار بودم"
-            button_emoji = "✨"
         
         keyboard["inline_keyboard"].append([
             {
@@ -158,12 +152,77 @@ class GraphicsHandler:
             }
         ])
 
-        # 📊 دکمه‌های اطلاعاتی
+        # اگر روزهای گذشته برای مرور وجود دارد، دکمه مرور اضافه شود
+        if completed_days and len(completed_days) > 0:
+            keyboard["inline_keyboard"].append([
+                {"text": "📖 مرور روزهای گذشته", "callback_data": f"review_{topic_id}"}
+            ])
+
         keyboard["inline_keyboard"].append([
             {"text": f"📊 پیشرفت", "callback_data": f"progress_{topic_id}"},
             {"text": f"🎯 موضوعات", "callback_data": "categories"}
         ])
 
+        return keyboard
+
+    @staticmethod
+    def create_day_options_keyboard(topic_id, completed_days):
+        """ساخت کیبورد گزینه‌های روز (شامل مرور گذشته)"""
+        keyboard = {"inline_keyboard": []}
+        
+        if completed_days:
+            keyboard["inline_keyboard"].append([
+                {"text": "📖 مرور روزهای گذشته", "callback_data": f"review_{topic_id}"}
+            ])
+        
+        keyboard["inline_keyboard"].append([
+            {"text": "🎯 موضوعات دیگر", "callback_data": "categories"},
+            {"text": "📊 پیشرفت", "callback_data": f"progress_{topic_id}"}
+        ])
+        
+        return keyboard
+
+    @staticmethod
+    def create_past_days_keyboard(topic_id, completed_days):
+        """ساخت کیبورد برای انتخاب روزهای گذشته"""
+        keyboard = {"inline_keyboard": []}
+        
+        row = []
+        for day in sorted(completed_days):
+            row.append({
+                "text": f"📅 روز {day}",
+                "callback_data": f"pastday_{topic_id}_{day}"
+            })
+            
+            if len(row) == 3:
+                keyboard["inline_keyboard"].append(row)
+                row = []
+        
+        if row:
+            keyboard["inline_keyboard"].append(row)
+        
+        keyboard["inline_keyboard"].append([
+            {"text": "🔙 بازگشت", "callback_data": f"cat_{topic_id}"},
+            {"text": "🏠 منوی اصلی", "callback_data": "main_menu"}
+        ])
+        
+        return keyboard
+
+    @staticmethod
+    def create_review_keyboard(topic_id, day_number, completed_days):
+        """ساخت کیبورد برای صفحه مرور روز گذشته"""
+        keyboard = {"inline_keyboard": []}
+        
+        if day_number < 28 and (day_number + 1) in completed_days:
+            keyboard["inline_keyboard"].append([
+                {"text": "➡️ روز بعدی", "callback_data": f"pastday_{topic_id}_{day_number + 1}"}
+            ])
+        
+        keyboard["inline_keyboard"].append([
+            {"text": "📖 همه روزها", "callback_data": f"review_{topic_id}"},
+            {"text": "🔙 بازگشت", "callback_data": f"cat_{topic_id}"}
+        ])
+        
         return keyboard
 
     @staticmethod
@@ -213,7 +272,6 @@ class GraphicsHandler:
 
 <code>══════════════════</code>
 <b>🚀 بیایید معجزه را آغاز کنیم!</b>
-✨ <i>شروع سفر ۲۸ روزه تحول...</i>
 """
 
     @staticmethod
