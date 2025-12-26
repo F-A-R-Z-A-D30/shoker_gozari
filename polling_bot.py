@@ -390,31 +390,72 @@ def handle_show_past_day(chat_id, user_id, topic_id, day_number):
 
 def handle_support_developer(chat_id, user_id=None):
     """هندلر حمایت توسعه‌دهنده"""
+    message = """
+💝 **حمایت از توسعه‌دهنده**
+
+✨ حمایت شما انگیزه ادامه توسعه این ربات است
+🎯 لطفاً مبلغ حمایت خود را انتخاب کنید:
+
+برای مبلغ دلخواه، از دکمه "مبلغ دلخواه" استفاده کنید.
+"""
+    
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "🌱 ۲۰,۰۰۰ تومان", "callback_data": "support_20000"},
+                {"text": "💫 ۵۰,۰۰۰ تومان", "callback_data": "support_50000"}
+            ],
+            [
+                {"text": "🌟 ۱۰۰,۰۰۰ تومان", "callback_data": "support_100000"},
+                {"text": "✨ مبلغ دلخواه", "callback_data": "support_custom"}
+            ],
+            [
+                {"text": "🔙 بازگشت", "callback_data": "main_menu"}
+            ]
+        ]
+    }
+    
+    send_message(chat_id, message, keyboard)
+
+
+def handle_support_amount(chat_id, amount=None):
+    """ارسال فاکتور برای مبلغ مشخص یا دلخواه"""
     invoice_url = f"{BASE_URL}/sendInvoice"
+    
+    if amount:
+        # اگر مبلغ مشخص شده
+        rial_amount = amount * 10  # تبدیل به ریال
+        label = f"حمایت {amount:,} تومان"
+        payload = f"support_fixed_{amount}"
+    else:
+        # مبلغ دلخواه
+        rial_amount = 200000  # حداقل ۱۰,۰۰۰ تومان
+        label = "مبلغ دلخواه (از 20,000 تومان)"
+        payload = "support_custom_amount"
+    
     invoice_data = {
         "chat_id": chat_id,
         "title": "💝 حمایت از توسعه‌دهنده",
-        "description": "✨ حمایت شما انگیزه ادامه توسعه این ربات است\n\n🎯 هر میزان حمایت، قدردانی می‌شود",
-        "payload": "support_payload",
+        "description": "✨ قدردانی از حمایت شما\n💝 هر میزان که مایل باشید",
+        "payload": payload,
         "provider_token": PAYMENT_TOKEN,
         "currency": "IRR",
-        "prices": [
-             {"label": "🌱 حمایت دوستانه (۲۰,۰۰۰ تومان)", "amount": 20000},
-           {"label": "💫 حمایت ویژه (۵۰,۰۰۰ تومان)", "amount": 50000},
-            {"label": "🌟 حمایت استثنایی (۱۰۰,۰۰۰ تومان)", "amount": 100000},
-                {"label": "✨ مبلغ دلخواه", "amount": 0}
-        ],
-        "suggested_tip_amounts": [0, 0, 0],
-"is_flexible": True
+        "prices": [{"label": label, "amount": rial_amount}],
+        "suggested_tip_amounts": [],
+        "is_flexible": True if not amount else False,  # فقط برای مبلغ دلخواه flexible باشه
+        "max_tip_amount": 10000000,  # حداکثر ۱,۰۰۰,۰۰۰ تومان
+        "need_name": False,
+        "need_phone_number": False,
+        "need_email": False,
+        "need_shipping_address": False
     }
+    
     try:
         response = requests.post(invoice_url, json=invoice_data)
         if response.status_code != 200:
             print(f"⚠️ خطا در ارسال فاکتور: {response.text}")
-            send_message(chat_id, "⚠️ در حال حاضر امکان پرداخت وجود ندارد. لطفاً از روش کارت به کارت استفاده کنید.")
     except Exception as e:
         print(f"❌ Error sending invoice: {e}")
-        send_message(chat_id, "⚠️ خطایی در ایجاد درگاه پرداخت رخ داد.")
 
 # ========== حلقه اصلی Polling ==========
 
@@ -499,5 +540,6 @@ def start_polling():
 
 if __name__ == "__main__":
     start_polling()
+
 
 
