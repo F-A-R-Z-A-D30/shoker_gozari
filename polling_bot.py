@@ -388,26 +388,29 @@ def handle_show_past_day(chat_id, user_id, topic_id, day_number):
         print(f"Error showing past day: {e}")
         send_message(chat_id, "⚠️ خطایی در نمایش محتوا رخ داد.")
 
+# ========== توابع حمایت ==========
+
 def handle_support_developer(chat_id, user_id=None):
     """هندلر حمایت توسعه‌دهنده"""
     message = """
-💝 **حمایت از توسعه‌دهنده**
+💝 **حمایت از توسعه‌دهنده ربات شکرگزاری**
 
 ✨ حمایت شما انگیزه ادامه توسعه این ربات است
-🎯 لطفاً مبلغ حمایت خود را انتخاب کنید:
+🎯 لطفاً روش حمایت را انتخاب کنید:
 
-برای مبلغ دلخواه، از دکمه "مبلغ دلخواه" استفاده کنید.
+۱. 💳 **پرداخت آنلاین ۵۰,۰۰۰ تومان**
+۲. 💰 **پرداخت کارت به کارت (هر مبلغ)**
+
+با تشکر از همراهی شما 🌸
 """
     
     keyboard = {
         "inline_keyboard": [
             [
-                {"text": "🌱 ۲۰,۰۰۰ تومان", "callback_data": "support_20000"},
-                {"text": "💫 ۵۰,۰۰۰ تومان", "callback_data": "support_50000"}
+                {"text": "💳 پرداخت آنلاین", "callback_data": "support_online"}
             ],
             [
-                {"text": "🌟 ۱۰۰,۰۰۰ تومان", "callback_data": "support_100000"},
-                {"text": "✨ مبلغ دلخواه", "callback_data": "support_custom"}
+                {"text": "💰 پرداخت کارت به کارت", "callback_data": "support_cart"}
             ],
             [
                 {"text": "🔙 بازگشت", "callback_data": "main_menu"}
@@ -417,33 +420,20 @@ def handle_support_developer(chat_id, user_id=None):
     
     send_message(chat_id, message, keyboard)
 
-
-def handle_support_amount(chat_id, amount=None):
-    """ارسال فاکتور برای مبلغ مشخص یا دلخواه"""
+def handle_support_online(chat_id):
+    """ارسال فاکتور پرداخت آنلاین ۵۰,۰۰۰ تومان"""
     invoice_url = f"{BASE_URL}/sendInvoice"
-    
-    if amount:
-        # اگر مبلغ مشخص شده
-        rial_amount = amount * 10  # تبدیل به ریال
-        label = f"حمایت {amount:,} تومان"
-        payload = f"support_fixed_{amount}"
-    else:
-        # مبلغ دلخواه
-        rial_amount = 200000  # حداقل ۱۰,۰۰۰ تومان
-        label = "مبلغ دلخواه (از 20,000 تومان)"
-        payload = "support_custom_amount"
     
     invoice_data = {
         "chat_id": chat_id,
         "title": "💝 حمایت از توسعه‌دهنده",
-        "description": "✨ قدردانی از حمایت شما\n💝 هر میزان که مایل باشید",
-        "payload": payload,
+        "description": "✨ پرداخت آنلاین  ۲۰,۰۰۰ تومان\n🎯 قدردانی از حمایت شما",
+        "payload": f"support_{int(time.time())}",
         "provider_token": PAYMENT_TOKEN,
         "currency": "IRR",
-        "prices": [{"label": label, "amount": rial_amount}],
+        "prices": [{"label": "حمایت ۲۰,۰۰۰ تومان", "amount": 200000}],  # ۵۰,۰۰۰ تومان = ۵۰۰,۰۰۰ ریال
         "suggested_tip_amounts": [],
-        "is_flexible": True if not amount else False,  # فقط برای مبلغ دلخواه flexible باشه
-        "max_tip_amount": 10000000,  # حداکثر ۱,۰۰۰,۰۰۰ تومان
+        "is_flexible": False,
         "need_name": False,
         "need_phone_number": False,
         "need_email": False,
@@ -451,11 +441,45 @@ def handle_support_amount(chat_id, amount=None):
     }
     
     try:
-        response = requests.post(invoice_url, json=invoice_data)
+        response = requests.post(invoice_url, json=invoice_data, timeout=10)
         if response.status_code != 200:
             print(f"⚠️ خطا در ارسال فاکتور: {response.text}")
+            # اگر درگاه پرداخت مشکل داشت، گزینه کارت به کارت نشون بده
+            handle_support_cart(chat_id)
     except Exception as e:
         print(f"❌ Error sending invoice: {e}")
+        handle_support_cart(chat_id)
+
+def handle_support_cart(chat_id):
+    """نمایش اطلاعات کارت به کارت"""
+    cart_info = """
+💳 **پرداخت کارت به کارت:**
+
+🏦 **بانک:** تجارت
+💳 **شماره کارت:** `۵۸۵۹-۸۳۱۰-۱۲۶۸-۶۱۶۷`
+👤 **به نام:** فرزاد قجری
+
+📌 **راهنمای پرداخت:**
+۱. وارد برنامه بانک خود شوید
+۲. گزینه «کارت به کارت» را انتخاب کنید
+۳. شماره کارت بالا را وارد کنید
+۴. مبلغ دلخواه خود را واریز کنید
+
+✨ از حمایت ارزشمند شما سپاسگزاریم
+"""
+    
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "💳 پرداخت آنلاین", "callback_data": "support_online"}
+            ],
+            [
+                {"text": "🔙 بازگشت", "callback_data": "support_developer"}
+            ]
+        ]
+    }
+    
+    send_message(chat_id, cart_info, keyboard)
 
 # ========== حلقه اصلی Polling ==========
 
@@ -532,6 +556,23 @@ def start_polling():
                             handle_show_past_day(chat_id, user_id, topic_id, day_number)
                         elif data == "support_developer":
                             handle_support_developer(chat_id, user_id)
+                        elif data == "support_online":
+                            handle_support_online(chat_id)
+                        elif data == "support_cart":
+                            handle_support_cart(chat_id)
+                        elif data == "main_menu":
+                            # بازگشت به منوی اصلی
+                            welcome_text = GraphicsHandler.create_welcome_message()
+                            send_message(chat_id, welcome_text)
+                            time.sleep(0.5)
+                            start_keyboard = {
+                                "inline_keyboard": [
+                                    [{"text": "🚀 شروع سفر ۲۸ روزه", "callback_data": "start_using"}],
+                                    [{"text": "💝 حمایت از توسعه", "callback_data": "support_developer"}],
+                                    [{"text": "📖 راهنما", "callback_data": "help"}]
+                                ]
+                            }
+                            send_message(chat_id, "✨ انتخاب کنید:", start_keyboard)
 
             time.sleep(0.5)
         except Exception as e:
@@ -540,6 +581,3 @@ def start_polling():
 
 if __name__ == "__main__":
     start_polling()
-
-
-
