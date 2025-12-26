@@ -399,12 +399,12 @@ def handle_support_developer(chat_id, user_id=None):
         "provider_token": PAYMENT_TOKEN,
         "currency": "IRR",
         "prices": [
-            {"label": "🌱 حمایت دوستانه", "amount": 200000},
-            {"label": "💫 حمایت ویژه", "amount": 500000},
-            {"label": "🌟 حمایت استثنایی", "amount": 1000000},
-            {"label": "✨ مبلغ دلخواه", "amount": 0}
+             {"label": "🌱 حمایت دوستانه (۲۰,۰۰۰ تومان)", "amount": 20000},
+           {"label": "💫 حمایت ویژه (۵۰,۰۰۰ تومان)", "amount": 50000},
+            {"label": "🌟 حمایت استثنایی (۱۰۰,۰۰۰ تومان)", "amount": 100000},
+                {"label": "✨ مبلغ دلخواه", "amount": 0}
         ],
-        "suggested_tip_amounts": [200000, 500000, 1000000, 0],
+        "suggested_tip_amounts": [0, 0, 1000000, 0],
         "is_flexible": True
     }
     try:
@@ -499,3 +499,4 @@ def start_polling():
 
 if __name__ == "__main__":
     start_polling()
+
