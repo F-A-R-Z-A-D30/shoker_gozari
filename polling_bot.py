@@ -960,7 +960,7 @@ def start_polling():
                             # فقط برای ادمین
                             show_registration_stats(chat_id, user_id)
                         
-                        elif "موضوعات" in text or text == "/topics" or text == "🎯 موضوعات شکرگزاری":
+                        elif text == "🎯 موضوعات شکرگزاری":
                             # چک ثبت‌نام قبل از نمایش موضوعات
                             if users_collection is not None:
                                 user_data = users_collection.find_one({"user_id": str(user_id)})
@@ -972,6 +972,17 @@ def start_polling():
                         elif text == "📊 پیشرفت کلی":
                             progress_text = create_progress_text(user_id)
                             send_message(chat_id, progress_text)
+                        
+                        elif text == "❓ راهنما":
+                            help_message = GraphicsHandler.create_help_message()
+                            send_message(chat_id, help_message)
+                        
+                        elif text == "👨‍💻 ارتباط با من":
+                            contact_message = GraphicsHandler.create_contact_message()
+                            send_message(chat_id, contact_message)
+                        
+                        elif text == "💝 حمایت":
+                            handle_support_developer(chat_id, user_id)
                         
                         else:
                             for t in get_all_topics():
@@ -1039,42 +1050,212 @@ def start_polling():
                                     continue
                             send_message(chat_id, "🎯 یک حوزه از زندگی خود را برای شکرگزاری انتخاب کنید:", GraphicsHandler.create_categories_keyboard())
                         
+                        # دکمه‌های موضوعات اصلی
                         elif data.startswith("topic_"):
-                            topic_id = data.split("_")[1]
-                            handle_category_selection(chat_id, user_id, topic_id)
+                            try:
+                                topic_id = int(data.split("_")[1])
+                                handle_category_selection(chat_id, user_id, topic_id)
+                            except:
+                                send_message(chat_id, "⚠️ خطا در انتخاب موضوع")
                         
-                        elif data.startswith("complete_day_"):
-                            parts = data.split("_")
-                            topic_id = parts[2]
-                            day_num = int(parts[3])
-                            result = complete_day_for_user(user_id, topic_id, day_num)
-                            
-                            if result["success"]:
-                                send_message(chat_id, result["message"])
-                            else:
-                                send_message(chat_id, result.get("message", "خطا در ثبت تمرین"))
-                        
-                        elif data.startswith("view_day_"):
-                            parts = data.split("_")
-                            topic_id = parts[2]
-                            day_num = int(parts[3])
-                            
-                            # بارگذاری محتوای روز مشخص
-                            topic_info = get_topic_by_id(topic_id)
-                            content = load_past_day_content(topic_id, day_num, user_id)
-                            user_progress = get_user_topic_progress(user_id, topic_id)
-                            completed_days = user_progress.get("completed_days", [])
-                            is_completed = day_num in completed_days
-                            
-                            if content:
-                                msg_text = GraphicsHandler.create_beautiful_message(topic_info['name'], day_num, user_progress)
-                                inline_keyboard = GraphicsHandler.create_day_inline_keyboard(topic_id, day_num, is_completed, completed_days)
+                        # دکمه "امروز شکرگزار بودم"
+                        elif data.startswith("complete_"):
+                            try:
+                                parts = data.split("_")
+                                topic_id = int(parts[1])
+                                day_num = int(parts[2])
                                 
-                                photo_path = topic_info.get("image")
-                                if photo_path and os.path.exists(photo_path):
-                                    send_photo(chat_id, photo_path, caption=msg_text, keyboard=inline_keyboard)
+                                # چک ثبت‌نام
+                                if users_collection is not None:
+                                    user_data = users_collection.find_one({"user_id": str(user_id)})
+                                    if not user_data:
+                                        send_message(chat_id, "⛔ ابتدا ثبت‌نام کنید.")
+                                        continue
+                                
+                                result = complete_day_for_user(user_id, topic_id, day_num)
+                                
+                                if result["success"]:
+                                    # نمایش پیام موفقیت
+                                    send_message(chat_id, result["message"])
+                                    
+                                    # آپدیت صفحه با اطلاعات جدید
+                                    user_progress = get_user_topic_progress(user_id, topic_id)
+                                    access_info = daily_reset.get_access_info(user_id, topic_id)
+                                    current_day = user_progress.get("current_day", 1)
+                                    completed_days = user_progress.get("completed_days", [])
+                                    topic_info = get_topic_by_id(topic_id)
+                                    
+                                    if not access_info["has_access"] and (current_day - 1) in completed_days:
+                                        last_done = current_day - 1
+                                        message = f"""
+✅ تمرین امروز تکمیل شد!
+
+{topic_info['emoji']} {topic_info['name']}
+📅 روز {last_done} ثبت گردید.
+⏳ تمرین بعدی: {access_info['remaining_text']}
+
+🎯 برای ادامه، موضوع جدیدی را انتخاب کنید.
+"""
+                                        keyboard = GraphicsHandler.create_day_options_keyboard(topic_id, completed_days)
+                                        send_message(chat_id, message, keyboard)
+                                    else:
+                                        # بازگشت به صفحه تمرین با دکمه تکمیل شده
+                                        content = load_day_content(topic_id, current_day, user_id)
+                                        if content:
+                                            msg_text = GraphicsHandler.create_beautiful_message(topic_info['name'], content['day_number'], user_progress)
+                                            inline_keyboard = GraphicsHandler.create_day_inline_keyboard(topic_id, content['day_number'], True, completed_days)
+                                            
+                                            photo_path = topic_info.get("image")
+                                            if photo_path and os.path.exists(photo_path):
+                                                send_photo(chat_id, photo_path, caption=msg_text, keyboard=inline_keyboard)
+                                            else:
+                                                send_message(chat_id, msg_text, inline_keyboard)
                                 else:
-                                    send_message(chat_id, msg_text, inline_keyboard)
+                                    send_message(chat_id, result.get("message", "⚠️ خطا در ثبت تمرین"))
+                                    
+                            except Exception as e:
+                                print(f"❌ خطا در ثبت تمرین: {e}")
+                                send_message(chat_id, "⚠️ خطا در ثبت تمرین")
+                        
+                        # دکمه "پیشرفت" برای یک موضوع خاص
+                        elif data.startswith("progress_"):
+                            try:
+                                topic_id = int(data.split("_")[1])
+                                
+                                # چک ثبت‌نام
+                                if users_collection is not None:
+                                    user_data = users_collection.find_one({"user_id": str(user_id)})
+                                    if not user_data:
+                                        send_message(chat_id, "⛔ ابتدا ثبت‌نام کنید.")
+                                        continue
+                                
+                                user_progress = get_user_topic_progress(user_id, topic_id)
+                                completed_days = user_progress.get("completed_days", [])
+                                topic_info = get_topic_by_id(topic_id)
+                                
+                                total_days = 28
+                                completed_count = len(completed_days)
+                                progress_percent = (completed_count / total_days) * 100 if total_days > 0 else 0
+                                
+                                # ساخت نوار پیشرفت
+                                filled_bars = int(progress_percent / 5)
+                                progress_bar = "█" * filled_bars + "░" * (20 - filled_bars)
+                                
+                                progress_message = f"""
+📊 **پیشرفت در {topic_info['emoji']} {topic_info['name']}**
+
+{progress_bar}
+{progress_percent:.1f}% • {completed_count} از {total_days} روز
+
+📅 روزهای تکمیل شده: {', '.join(map(str, sorted(completed_days))) if completed_days else 'هنوز تکمیل نشده'}
+
+✨ **وضعیت فعلی:**
+"""
+                                if progress_percent == 100:
+                                    progress_message += "🏆 موضوع به طور کامل تکمیل شد! عالی!"
+                                elif progress_percent >= 75:
+                                    progress_message += "🌟 در حال اتمام! ادامه دهید!"
+                                elif progress_percent >= 50:
+                                    progress_message += "🚀 نیمه راه را طی کرده‌اید!"
+                                elif progress_percent >= 25:
+                                    progress_message += "💪 شروع خوبی داشته‌اید!"
+                                else:
+                                    progress_message += "🌱 تازه شروع کرده‌اید!"
+                                
+                                keyboard = {
+                                    "inline_keyboard": [
+                                        [{"text": f"🎯 ادامه تمرین {topic_info['name']}", "callback_data": f"topic_{topic_id}"}],
+                                        [{"text": "📊 پیشرفت کلی", "callback_data": "overall_progress"}],
+                                        [{"text": "🔙 بازگشت", "callback_data": "main_menu"}]
+                                    ]
+                                }
+                                
+                                send_message(chat_id, progress_message, keyboard)
+                                
+                            except Exception as e:
+                                print(f"❌ خطا در نمایش پیشرفت: {e}")
+                                send_message(chat_id, "⚠️ خطا در نمایش پیشرفت")
+                        
+                        # دکمه "پیشرفت کلی"
+                        elif data == "overall_progress":
+                            progress_text = create_progress_text(user_id)
+                            send_message(chat_id, progress_text)
+                        
+                        # دکمه "مرور روزهای گذشته"
+                        elif data.startswith("review_"):
+                            try:
+                                topic_id = int(data.split("_")[1])
+                                
+                                # چک ثبت‌نام
+                                if users_collection is not None:
+                                    user_data = users_collection.find_one({"user_id": str(user_id)})
+                                    if not user_data:
+                                        send_message(chat_id, "⛔ ابتدا ثبت‌نام کنید.")
+                                        continue
+                                
+                                user_progress = get_user_topic_progress(user_id, topic_id)
+                                completed_days = user_progress.get("completed_days", [])
+                                topic_info = get_topic_by_id(topic_id)
+                                
+                                if not completed_days:
+                                    send_message(chat_id, f"📝 هنوز روزی در موضوع {topic_info['emoji']} {topic_info['name']} تکمیل نکرده‌اید.")
+                                else:
+                                    keyboard = GraphicsHandler.create_past_days_keyboard(topic_id, completed_days)
+                                    send_message(chat_id, f"📖 روزهای تکمیل شده در {topic_info['emoji']} {topic_info['name']} ({len(completed_days)} روز):", keyboard)
+                                    
+                            except Exception as e:
+                                print(f"❌ خطا در مرور روزها: {e}")
+                                send_message(chat_id, "⚠️ خطا در نمایش روزهای گذشته")
+                        
+                        # دکمه "نمایش روز گذشته"
+                        elif data.startswith("pastday_"):
+                            try:
+                                parts = data.split("_")
+                                topic_id = int(parts[1])
+                                day_num = int(parts[2])
+                                
+                                # چک ثبت‌نام
+                                if users_collection is not None:
+                                    user_data = users_collection.find_one({"user_id": str(user_id)})
+                                    if not user_data:
+                                        send_message(chat_id, "⛔ ابتدا ثبت‌نام کنید.")
+                                        continue
+                                
+                                # بارگذاری محتوای روز گذشته
+                                topic_info = get_topic_by_id(topic_id)
+                                content = load_past_day_content(topic_id, day_num, user_id)
+                                user_progress = get_user_topic_progress(user_id, topic_id)
+                                completed_days = user_progress.get("completed_days", [])
+                                is_completed = day_num in completed_days
+                                
+                                if content:
+                                    # استفاده از GraphicsHandler برای ساخت پیام
+                                    msg_text = GraphicsHandler.create_beautiful_message(topic_info['name'], day_num, user_progress)
+                                    inline_keyboard = GraphicsHandler.create_day_inline_keyboard(topic_id, day_num, is_completed, completed_days)
+                                    
+                                    photo_path = topic_info.get("image")
+                                    if photo_path and os.path.exists(photo_path):
+                                        send_photo(chat_id, photo_path, caption=msg_text, keyboard=inline_keyboard)
+                                    else:
+                                        send_message(chat_id, msg_text, inline_keyboard)
+                                else:
+                                    send_message(chat_id, "⚠️ محتوای این روز در دسترس نیست")
+                                    
+                            except Exception as e:
+                                print(f"❌ خطا در نمایش روز گذشته: {e}")
+                                send_message(chat_id, "⚠️ خطا در نمایش محتوا")
+                        
+                        # دکمه "بازگشت به موضوع"
+                        elif data.startswith("cat_"):
+                            try:
+                                topic_id = int(data.split("_")[1])
+                                handle_category_selection(chat_id, user_id, topic_id)
+                            except:
+                                send_message(chat_id, "⚠️ خطا در بازگشت به موضوع")
+                        
+                        elif data == "help":
+                            help_message = GraphicsHandler.create_help_message()
+                            send_message(chat_id, help_message)
                         
                         elif data == "support_developer":
                             handle_support_developer(chat_id, user_id)
@@ -1084,39 +1265,6 @@ def start_polling():
                         
                         elif data == "support_cart":
                             handle_support_cart(chat_id)
-                        
-                        elif data == "help":
-                            help_message = """
-📖 **راهنمای استفاده از ربات**
-
-✨ **مراحل کار با ربات:**
-۱. ثبت‌نام با شماره موبایل
-۲. انتخاب یک موضوع از لیست
-۳. انجام تمرین روزانه
-۴. ثبت تکمیل تمرین
-۵. پیگیری پیشرفت
-
-📌 **نکات مهم:**
-• هر روز فقط یک تمرین از هر موضوع فعال است
-• می‌توانید تمرین‌های گذشته را مرور کنید
-• پیشرفت شما ذخیره می‌شود
-• می‌توانید چند موضوع را همزمان دنبال کنید
-
-❓ **سوالات متداول:**
-⏰ آیا تمرینات زمان‌دار هستند؟ 
-خیر، هر وقت آماده بودید می‌توانید تمرین کنید.
-
-📱 آیا اطلاعاتم امن است؟
-بله، اطلاعات شما محرمانه است.
-
-💰 آیا ربات رایگان است؟
-بله، تمام تمرین‌ها رایگان هستند.
-"""
-                            send_message(chat_id, help_message)
-                        
-                        elif data == "progress":
-                            progress_text = create_progress_text(user_id)
-                            send_message(chat_id, progress_text)
 
             time.sleep(0.5)
         except Exception as e:
