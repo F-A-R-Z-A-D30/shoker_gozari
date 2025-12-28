@@ -7,39 +7,115 @@ root_path = os.path.dirname(current_dir)
 if root_path not in sys.path:
     sys.path.insert(0, root_path)
 
-# مدیریت هوشمند وارد کردن لودر
-try:
-    from loader import get_all_topics, load_day_content, load_past_day_content
-except ImportError:
-    try:
-        from static.content.loader import get_all_topics, load_day_content, load_past_day_content
-    except ImportError:
-        try:
-            import loader
-            get_all_topics = loader.get_all_topics
-            load_day_content = loader.load_day_content
-            load_past_day_content = loader.load_past_day_content
-        except Exception as e:
-            print(f"✨ GraphicsHandler: لودر یافت نشد\n📝 {e}")
-
 class GraphicsHandler:
+
+    @staticmethod
+    def get_all_topics():
+        """دریافت همه موضوعات - برای جلوگیری از import error"""
+        try:
+            from loader import get_all_topics as get_topics
+            return get_topics()
+        except ImportError:
+            try:
+                from static.content.loader import get_all_topics as get_topics
+                return get_topics()
+            except ImportError:
+                # بازگشت به داده‌های پیش‌فرض
+                return [
+                    {"id": 1, "name": "سلامتی و تندرستی", "emoji": "💚", "image": "assets/health.png"},
+                    {"id": 2, "name": "خانواده و روابط", "emoji": "👨‍👩‍👧‍👦", "image": "assets/family.png"},
+                    {"id": 3, "name": "ثروت و فراوانی", "emoji": "💰", "image": "assets/wealth.png"},
+                    {"id": 4, "name": "شادی و آرامش", "emoji": "😊", "image": "assets/happiness.png"},
+                    {"id": 5, "name": "اهداف و موفقیت", "emoji": "🎯", "image": "assets/goals.png"},
+                    {"id": 6, "name": "زندگی مطلوب", "emoji": "🏠", "image": "assets/quality.png"},
+                    {"id": 7, "name": "طبیعت و کائنات", "emoji": "🌿", "image": "assets/nature.png"},
+                    {"id": 8, "name": "عشق و معنویت", "emoji": "💖", "image": "assets/love.png"}
+                ]
+
+    @staticmethod
+    def load_day_content(topic_id, day_number, user_id=None):
+        """لود محتوا با مدیریت خطا"""
+        try:
+            from loader import load_day_content as load_content
+            return load_content(topic_id, day_number, user_id)
+        except ImportError:
+            try:
+                from static.content.loader import load_day_content as load_content
+                return load_content(topic_id, day_number, user_id)
+            except ImportError:
+                # محتوای پیش‌فرض
+                return {
+                    "success": True,
+                    "topic_name": "سلامتی و تندرستی",
+                    "topic_emoji": "💚",
+                    "week_title": "تمرین روزانه",
+                    "author_quote": "«شکرگزاری کلید فراوانی است.»",
+                    "intro": "امروز را با شکرگزاری شروع کنید...",
+                    "items": [
+                        "شکرگزاری برای سلامتی",
+                        "شکرگزاری برای خانواده",
+                        "شکرگزاری برای شغل",
+                        "شکرگزاری برای خانه",
+                        "شکرگزاری برای غذا",
+                        "شکرگزاری برای هوای پاک",
+                        "شکرگزاری برای فرصت‌ها",
+                        "شکرگزاری برای چالش‌های رشد‌دهنده",
+                        "شکرگزاری برای تجربیات ارزشمند",
+                        "شکرگزاری برای همین لحظه زندگی"
+                    ],
+                    "exercise": "📖 این ۱۰ مورد را در دفتر شکرگزاری خود بنویسید و هر کدام را با احساس قدردانی تکرار کنید."
+                }
+
+    @staticmethod
+    def load_past_day_content(topic_id, day_number, user_id=None):
+        """لود محتوای روزهای گذشته"""
+        try:
+            from loader import load_past_day_content as load_past_content
+            return load_past_content(topic_id, day_number, user_id)
+        except ImportError:
+            try:
+                from static.content.loader import load_past_day_content as load_past_content
+                return load_past_content(topic_id, day_number, user_id)
+            except ImportError:
+                # محتوای پیش‌فرض برای مرور
+                return {
+                    "success": True,
+                    "topic_name": "سلامتی و تندرستی",
+                    "topic_emoji": "💚",
+                    "week_title": "مرور تمرین گذشته",
+                    "author_quote": "«مرور شکرگزاری‌ها، معجزه را تازه می‌کند.»",
+                    "intro": "امروز را با مرور شکرگزاری‌های گذشته آغاز می‌کنیم...",
+                    "items": [
+                        "مرور شکرگزاری برای سلامتی",
+                        "مرور شکرگزاری برای خانواده",
+                        "مرور شکرگزاری برای شغل",
+                        "مرور شکرگزاری برای خانه",
+                        "مرور شکرگزاری برای غذا",
+                        "مرور شکرگزاری برای هوای پاک",
+                        "مرور شکرگزاری برای فرصت‌ها",
+                        "مرور شکرگزاری برای چالش‌ها",
+                        "مرور شکرگزاری برای تجربیات",
+                        "مرور شکرگزاری برای لحظات زندگی"
+                    ],
+                    "exercise": "🙏 با احساس قدردانی، روزهای گذشته را مرور کنید."
+                }
 
     @staticmethod
     def create_beautiful_message(topic_name, day_number, user_progress=None):
         """🎨 ساخت پیام گرافیکی زیبا برای تمرین روزانه"""
-        topics = get_all_topics()
+        topics = GraphicsHandler.get_all_topics()
         topic_id = None
         
         for topic in topics:
-            if topic["name"] in topic_name:
+            if topic["name"] == topic_name or topic["name"] in topic_name:
                 topic_id = topic["id"]
                 break
 
         if not topic_id:
             return "⚠️ موضوع مورد نظر یافت نشد."
 
-        content = load_day_content(topic_id, day_number)
-        if not content:
+        content = GraphicsHandler.load_day_content(topic_id, day_number)
+        if not content or not content.get("success", True):
             return "❌ محتوای مورد نظر یافت نشد."
 
         emoji = content.get("topic_emoji", "✨")
@@ -103,7 +179,7 @@ class GraphicsHandler:
     @staticmethod
     def create_categories_keyboard():
         """🎯 ساخت کیبورد موضوعات اصلی"""
-        topics = get_all_topics()
+        topics = GraphicsHandler.get_all_topics()
         keyboard = {"keyboard": [], "resize_keyboard": True}
 
         row = []
@@ -126,7 +202,7 @@ class GraphicsHandler:
     @staticmethod
     def create_day_inline_keyboard(topic_id, day_number, is_completed=False, completed_days=None):
         """🔘 ساخت دکمه‌های اینلاین زیبا"""
-        topics = get_all_topics()
+        topics = GraphicsHandler.get_all_topics()
         topic_emoji = "🙏"
         
         for topic in topics:
@@ -172,7 +248,7 @@ class GraphicsHandler:
         
         keyboard["inline_keyboard"].append([
             {"text": "🎯 موضوعات دیگر", "callback_data": "categories"},
-            {"text": "📊 پیشرفت", "callback_data": f"progress_{topic_id}"}
+            {"text": "📊 پیشرفت کلی", "callback_data": "overall_progress"}
         ])
         
         return keyboard
@@ -208,6 +284,7 @@ class GraphicsHandler:
         """ساخت کیبورد برای صفحه مرور روز گذشته"""
         keyboard = {"inline_keyboard": []}
         
+        # بررسی آیا روز بعدی هم موجود است
         if day_number < 28 and (day_number + 1) in completed_days:
             keyboard["inline_keyboard"].append([
                 {"text": "➡️ روز بعدی", "callback_data": f"pastday_{topic_id}_{day_number + 1}"}
@@ -336,3 +413,20 @@ www.danekar.ir
 
 ✨ شکرگزار فرصت همکاری ✨
 """
+
+    @staticmethod
+    def get_topic_image(topic_id):
+        """دریافت مسیر تصویر موضوع"""
+        topics = GraphicsHandler.get_all_topics()
+        for topic in topics:
+            if topic["id"] == topic_id:
+                # اگر مسیر نسبی داده شده، مسیر کامل بساز
+                image_path = topic.get("image", "")
+                if image_path and not os.path.isabs(image_path):
+                    # ساخت مسیر کامل از ریشه پروژه
+                    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    full_path = os.path.join(base_dir, image_path)
+                    if os.path.exists(full_path):
+                        return full_path
+                return image_path
+        return None
