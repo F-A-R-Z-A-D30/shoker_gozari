@@ -83,7 +83,7 @@ def get_mongo_client():
 
 try:
     mongo_client = get_mongo_client()
-    if mongo_client is not None:  # اصلاح: مقایسه با None
+    if mongo_client is not None:
         db = mongo_client['gratitude_bot']
         users_collection = db['registered_users']  # کاربران ثبت‌نام شده
         temp_users_collection = db['temp_users']   # کاربران در حال ثبت‌نام
@@ -141,7 +141,7 @@ def validate_phone_number(phone):
 def register_user(user_id, username, first_name, last_name, phone_number):
     """ثبت‌نام کاربر در دیتابیس"""
     try:
-        if users_collection is None:  # اصلاح: مقایسه با None
+        if users_collection is None:
             return {"success": False, "message": "دیتابیس در دسترس نیست"}
         
         now = datetime.now()
@@ -175,7 +175,7 @@ def register_user(user_id, username, first_name, last_name, phone_number):
         users_collection.insert_one(user_data)
         
         # حذف از کاربران موقت
-        if temp_users_collection is not None:  # اصلاح: مقایسه با None
+        if temp_users_collection is not None:
             temp_users_collection.delete_one({"user_id": str(user_id)})
         
         print(f"✅ کاربر ثبت‌نام شد: {user_id} | شماره: {phone_number}")
@@ -192,7 +192,7 @@ def register_user(user_id, username, first_name, last_name, phone_number):
 def get_registered_users_count():
     """دریافت تعداد کاربران ثبت‌نام شده"""
     try:
-        if users_collection is not None:  # اصلاح: مقایسه با None
+        if users_collection is not None:
             return users_collection.count_documents({})
         return 0
     except:
@@ -228,7 +228,7 @@ def start_registration(chat_id, user_id, username, first_name, last_name):
     """شروع فرآیند ثبت‌نام"""
     try:
         # بررسی آیا کاربر قبلاً ثبت‌نام کرده
-        if users_collection is not None:  # اصلاح: مقایسه با None
+        if users_collection is not None:
             existing = users_collection.find_one({"user_id": str(user_id)})
             if existing:
                 message = f"""
@@ -243,7 +243,7 @@ def start_registration(chat_id, user_id, username, first_name, last_name):
                 return
         
         # ذخیره موقت اطلاعات کاربر
-        if temp_users_collection is not None:  # اصلاح: مقایسه با None
+        if temp_users_collection is not None:
             temp_users_collection.update_one(
                 {"user_id": str(user_id)},
                 {
@@ -317,7 +317,7 @@ def handle_phone_number(chat_id, user_id, phone_number):
         
         # دریافت اطلاعات کاربر از دیتابیس موقت
         user_info = None
-        if temp_users_collection is not None:  # اصلاح: مقایسه با None
+        if temp_users_collection is not None:
             user_info = temp_users_collection.find_one({"user_id": str(user_id)})
         
         if not user_info:
@@ -389,7 +389,7 @@ def show_registration_stats(chat_id, user_id):
         # محاسبه کاربران جدید امروز
         today = datetime.now().strftime("%Y-%m-%d")
         new_today = 0
-        if users_collection is not None:  # اصلاح: مقایسه با None
+        if users_collection is not None:
             new_today = users_collection.count_documents({
                 "registration_date_str": today
             })
@@ -397,7 +397,7 @@ def show_registration_stats(chat_id, user_id):
         # محاسبه درصد رشد روزانه
         yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
         new_yesterday = 0
-        if users_collection is not None:  # اصلاح: مقایسه با None
+        if users_collection is not None:
             new_yesterday = users_collection.count_documents({
                 "registration_date_str": yesterday
             })
@@ -421,7 +421,7 @@ def show_registration_stats(chat_id, user_id):
         for i in range(7):
             date = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
             day_count = 0
-            if users_collection is not None:  # اصلاح: مقایسه با None
+            if users_collection is not None:
                 day_count = users_collection.count_documents({
                     "registration_date_str": date
                 })
@@ -430,7 +430,7 @@ def show_registration_stats(chat_id, user_id):
                 stats_message += f"├ {date}: {day_count} کاربر جدید\n"
         
         # ۵ کاربر آخر
-        if users_collection is not None:  # اصلاح: مقایسه با None
+        if users_collection is not None:
             last_users = list(users_collection.find(
                 {},
                 {"full_name": 1, "registration_date_str": 1, "phone_number": 1}
@@ -456,6 +456,146 @@ def show_registration_stats(chat_id, user_id):
     except Exception as e:
         print(f"⚠️ خطا در نمایش آمار: {e}")
         send_message(chat_id, "⚠️ خطایی در دریافت آمار رخ داد.")
+
+# ========== توابع حمایت (اضافه شد) ==========
+
+def handle_support_developer(chat_id, user_id=None):
+    """هندلر حمایت توسعه‌دهنده"""
+    message = """
+💝 **حمایت از توسعه‌دهنده ربات شکرگزاری**
+
+✨ **چرا حمایت شما مهم است:**
+• امکان توسعه قابلیت‌های جدید
+• بهبود کیفیت ربات
+• اضافه کردن موضوعات بیشتر
+• پشتیبانی بهتر از کاربران
+
+🎯 **روش‌های حمایت:**
+
+۱. 💳 **پرداخت با کیف پول بله - ۲۰,۰۰۰ تومان**
+   - سریع و آسان
+   - از طریق کیف پول بله
+   - رسید فوری
+
+۲. 💰 **پرداخت کارت به کارت**
+   - هر مبلغ دلخواه 
+   - بدون کارمزد اضافی
+   
+
+✨ از همراهی و حمایت شما سپاسگزاریم
+"""
+    
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "💳 پرداخت ۲۰,۰۰۰ تومان", "callback_data": "support_online"}
+            ],
+            [
+                {"text": "💰 پرداخت کارت به کارت", "callback_data": "support_cart"}
+            ],
+            [
+                {"text": "🔙 بازگشت", "callback_data": "main_menu"}
+            ]
+        ]
+    }
+    
+    send_message(chat_id, message, keyboard)
+
+def handle_support_online(chat_id):
+    """ارسال فاکتور پرداخت آنلاین ۲۰,۰۰۰ تومان"""
+    message = """
+💳 **پرداخت با کیف پول بله**
+
+📌 **مشخصات پرداخت:**
+• مبلغ: ۲۰,۰۰۰ تومان
+• روش: کیف پول بله
+• امنیت: کاملاً ایمن
+
+🎯 **مراحل پرداخت:**
+۱. روی فاکتور زیر کلیک کنید
+۲. درگاه پرداخت باز می‌شود
+۳. از کیف پول بله پرداخت کنید
+۴. پرداخت را تأیید کنید
+۵. رسید دریافت می‌کنید
+
+
+
+✨ با تشکر از حمایت شما
+"""
+    
+    send_message(chat_id, message)
+    
+    time.sleep(1)
+    
+    # ارسال فاکتور برای ۲۰,۰۰۰ تومان
+    invoice_url = f"{BASE_URL}/sendInvoice"
+    
+    invoice_data = {
+        "chat_id": chat_id,
+        "title": "💝 حمایت از توسعه‌دهنده",
+        "description": "✨ پرداخت ۲۰,۰۰۰ تومان از کیف پول بله\n🎯 قدردانی از حمایت شما\n\nپس از پرداخت، رسید را نگه دارید.",
+        "payload": f"support_{int(time.time())}",
+        "provider_token": PAYMENT_TOKEN,
+        "currency": "IRR",
+        "prices": [{"label": "حمایت ۲۰,۰۰۰ تومان", "amount": 200000}],  # ۲۰,۰۰۰ تومان = ۲۰۰,۰۰۰ ریال
+        "suggested_tip_amounts": [],
+        "is_flexible": False,
+        "need_name": False,
+        "need_phone_number": False,
+        "need_email": False,
+        "need_shipping_address": False
+    }
+    
+    try:
+        response = requests.post(invoice_url, json=invoice_data, timeout=10)
+        if response.status_code != 200:
+            print(f"⚠️ خطا در ارسال فاکتور: {response.text}")
+            # اگر درگاه پرداخت مشکل داشت، گزینه کارت به کارت نشون بده
+            error_message = """
+⚠️ **درگاه پرداخت موقتاً در دسترس نیست**
+
+💰 **پیشنهاد ما:**
+از روش پرداخت کارت به کارت استفاده کنید.
+این روش سریع‌تر و بدون کارمزد است.
+
+✨ برای ادامه روی دکمه زیر کلیک کنید:
+"""
+            keyboard = {
+                "inline_keyboard": [
+                    [{"text": "💰 پرداخت کارت به کارت", "callback_data": "support_cart"}],
+                    [{"text": "🔙 بازگشت", "callback_data": "support_developer"}]
+                ]
+            }
+            send_message(chat_id, error_message, keyboard)
+    except Exception as e:
+        print(f"❌ Error sending invoice: {e}")
+        send_message(chat_id, "⚠️ خطایی در ایجاد درگاه پرداخت رخ داد.")
+
+def handle_support_cart(chat_id):
+    """نمایش اطلاعات کارت به کارت"""
+    cart_info = """
+💰 **پرداخت کارت به کارت**
+
+🏦 **مشخصات حساب:**
+• بانک: تجارت
+• شماره کارت: 5859831012686167
+• به نام: فرزاد قجری
+
+از حمایت ارزشمند شما سپاسگزاریم 🌸
+"""
+    
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "💳 پرداخت ۲۰,۰۰۰ تومان", "callback_data": "support_online"}
+            ],
+            [
+                {"text": "🔙 بازگشت", "callback_data": "support_developer"}
+            ]
+        ]
+    }
+    
+    send_message(chat_id, cart_info, keyboard)
 
 # ========== توابع API ==========
 
@@ -601,7 +741,7 @@ def create_progress_text(user_id):
 """
         
         # آپدیت last_login کاربر
-        if users_collection is not None:  # اصلاح: مقایسه با None
+        if users_collection is not None:
             users_collection.update_one(
                 {"user_id": str(user_id)},
                 {"$set": {"last_login": datetime.now()}}
@@ -633,7 +773,7 @@ def handle_start(chat_id, user_id, username=None, first_name=None, last_name=Non
     
     # بررسی آیا کاربر ثبت‌نام کرده
     is_registered = False
-    if users_collection is not None:  # اصلاح: مقایسه با None
+    if users_collection is not None:
         user_data = users_collection.find_one({"user_id": str(user_id)})
         is_registered = user_data is not None
     
@@ -694,7 +834,7 @@ def handle_category_selection(chat_id, user_id, topic_id):
     """دسترسی به محتوا فقط برای کاربران ثبت‌نام شده"""
     try:
         # بررسی ثبت‌نام
-        if users_collection is not None:  # اصلاح: مقایسه با None
+        if users_collection is not None:
             user_data = users_collection.find_one({"user_id": str(user_id)})
             if not user_data:
                 # کاربر ثبت‌نام نکرده
@@ -718,7 +858,7 @@ def handle_category_selection(chat_id, user_id, topic_id):
                 send_message(chat_id, message, keyboard)
                 return
         
-        # ادامه کد قبلی برای کاربران ثبت‌نام شده
+        # ادامه کد برای کاربران ثبت‌نام شده
         user_progress = get_user_topic_progress(user_id, topic_id)
         access_info = daily_reset.get_access_info(user_id, topic_id)
         current_day = user_progress.get("current_day", 1)
@@ -822,7 +962,7 @@ def start_polling():
                         
                         elif "موضوعات" in text or text == "/topics" or text == "🎯 موضوعات شکرگزاری":
                             # چک ثبت‌نام قبل از نمایش موضوعات
-                            if users_collection is not None:  # اصلاح: مقایسه با None
+                            if users_collection is not None:
                                 user_data = users_collection.find_one({"user_id": str(user_id)})
                                 if not user_data:
                                     send_message(chat_id, "⛔ ابتدا ثبت‌نام کنید.")
@@ -890,17 +1030,93 @@ def start_polling():
                         elif data == "main_menu":
                             handle_start(chat_id, user_id, username, first_name, last_name)
                         
-                        # سایر callback ها مانند قبل
                         elif data in ["start_using", "categories"]:
                             # چک ثبت‌نام
-                            if users_collection is not None:  # اصلاح: مقایسه با None
+                            if users_collection is not None:
                                 user_data = users_collection.find_one({"user_id": str(user_id)})
                                 if not user_data:
                                     send_message(chat_id, "⛔ ابتدا ثبت‌نام کنید.")
                                     continue
                             send_message(chat_id, "🎯 یک حوزه از زندگی خود را برای شکرگزاری انتخاب کنید:", GraphicsHandler.create_categories_keyboard())
                         
-                        # ... ادامه callback های دیگر
+                        elif data.startswith("topic_"):
+                            topic_id = data.split("_")[1]
+                            handle_category_selection(chat_id, user_id, topic_id)
+                        
+                        elif data.startswith("complete_day_"):
+                            parts = data.split("_")
+                            topic_id = parts[2]
+                            day_num = int(parts[3])
+                            result = complete_day_for_user(user_id, topic_id, day_num)
+                            
+                            if result["success"]:
+                                send_message(chat_id, result["message"])
+                            else:
+                                send_message(chat_id, result.get("message", "خطا در ثبت تمرین"))
+                        
+                        elif data.startswith("view_day_"):
+                            parts = data.split("_")
+                            topic_id = parts[2]
+                            day_num = int(parts[3])
+                            
+                            # بارگذاری محتوای روز مشخص
+                            topic_info = get_topic_by_id(topic_id)
+                            content = load_past_day_content(topic_id, day_num, user_id)
+                            user_progress = get_user_topic_progress(user_id, topic_id)
+                            completed_days = user_progress.get("completed_days", [])
+                            is_completed = day_num in completed_days
+                            
+                            if content:
+                                msg_text = GraphicsHandler.create_beautiful_message(topic_info['name'], day_num, user_progress)
+                                inline_keyboard = GraphicsHandler.create_day_inline_keyboard(topic_id, day_num, is_completed, completed_days)
+                                
+                                photo_path = topic_info.get("image")
+                                if photo_path and os.path.exists(photo_path):
+                                    send_photo(chat_id, photo_path, caption=msg_text, keyboard=inline_keyboard)
+                                else:
+                                    send_message(chat_id, msg_text, inline_keyboard)
+                        
+                        elif data == "support_developer":
+                            handle_support_developer(chat_id, user_id)
+                        
+                        elif data == "support_online":
+                            handle_support_online(chat_id)
+                        
+                        elif data == "support_cart":
+                            handle_support_cart(chat_id)
+                        
+                        elif data == "help":
+                            help_message = """
+📖 **راهنمای استفاده از ربات**
+
+✨ **مراحل کار با ربات:**
+۱. ثبت‌نام با شماره موبایل
+۲. انتخاب یک موضوع از لیست
+۳. انجام تمرین روزانه
+۴. ثبت تکمیل تمرین
+۵. پیگیری پیشرفت
+
+📌 **نکات مهم:**
+• هر روز فقط یک تمرین از هر موضوع فعال است
+• می‌توانید تمرین‌های گذشته را مرور کنید
+• پیشرفت شما ذخیره می‌شود
+• می‌توانید چند موضوع را همزمان دنبال کنید
+
+❓ **سوالات متداول:**
+⏰ آیا تمرینات زمان‌دار هستند؟ 
+خیر، هر وقت آماده بودید می‌توانید تمرین کنید.
+
+📱 آیا اطلاعاتم امن است؟
+بله، اطلاعات شما محرمانه است.
+
+💰 آیا ربات رایگان است؟
+بله، تمام تمرین‌ها رایگان هستند.
+"""
+                            send_message(chat_id, help_message)
+                        
+                        elif data == "progress":
+                            progress_text = create_progress_text(user_id)
+                            send_message(chat_id, progress_text)
 
             time.sleep(0.5)
         except Exception as e:
