@@ -118,17 +118,42 @@ class UserProgressManager:
         return day_number
 
     def complete_day(self, user_id, topic_id, day_number):
-        topic_key = str(topic_id)
-        next_day = min(day_number + 1, 28)
-        users_col.update_one(
-            {"user_id": str(user_id)}, 
-            {
-                "$addToSet": {f"topics.{topic_key}.completed_days": day_number}, 
-                "$set": {f"topics.{topic_key}.current_day": next_day}
-            }, 
-            upsert=True
-        )
-        return True
+        """تکمیل یک روز و برگرداندن نتیجه کامل"""
+        try:
+            topic_key = str(topic_id)
+            next_day = min(day_number + 1, 28)
+            
+            # ذخیره در MongoDB
+            result = users_col.update_one(
+                {"user_id": str(user_id)}, 
+                {
+                    "$addToSet": {f"topics.{topic_key}.completed_days": day_number}, 
+                    "$set": {f"topics.{topic_key}.current_day": next_day}
+                }, 
+                upsert=True
+            )
+            
+            if result.modified_count > 0 or result.upserted_id:
+                return {
+                    "success": True,
+                    "message": f"✅ روز {day_number} با موفقیت ثبت شد! ✨\n🎯 روز بعدی: {next_day}\n📊 یک قدم به تحول نزدیک‌تر شدید!",
+                    "next_day": next_day,
+                    "day_completed": day_number
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": "⚠️ تغییراتی ایجاد نشد. ممکن است این روز قبلاً ثبت شده باشد.",
+                    "next_day": day_number
+                }
+                
+        except Exception as e:
+            print(f"❌ خطا در complete_day: {e}")
+            return {
+                "success": False,
+                "message": "⚠️ خطای سرور در ذخیره‌سازی. لطفاً بعداً تلاش کنید.",
+                "next_day": day_number
+            }
 
 def get_week_info(day_number: int):
     week_number = ((day_number - 1) // 7) + 1
@@ -263,7 +288,18 @@ def load_past_day_content(topic_id: int, day_number: int, user_id: str = None) -
 
 # --- توابعی که در polling_bot.py استفاده می‌شوند ---
 def complete_day_for_user(user_id, topic_id, day_number):
-    return UserProgressManager().complete_day(user_id, topic_id, day_number)
+    """تکمیل روز برای کاربر - اصلاح شده برای برگرداندن دیکشنری کامل"""
+    try:
+        progress_manager = UserProgressManager()
+        result = progress_manager.complete_day(user_id, topic_id, day_number)
+        return result
+    except Exception as e:
+        print(f"❌ خطا در complete_day_for_user: {e}")
+        return {
+            "success": False,
+            "message": "⚠️ خطای سرور در ثبت تمرین.",
+            "next_day": day_number
+        }
 
 def get_all_topics():
     return [{"id": tid, **info} for tid, info in TOPICS.items()]
@@ -276,4 +312,3 @@ def get_user_topic_progress(user_id, topic_id):
 
 def start_topic_for_user(user_id, topic_id):
     return load_day_content(topic_id, 1, user_id)
-
