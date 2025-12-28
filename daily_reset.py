@@ -71,3 +71,4 @@ class DailyResetManager:
 
 # ایجاد یک نمونه برای استفاده در ربات
 daily_reset = DailyResetManager()
+
