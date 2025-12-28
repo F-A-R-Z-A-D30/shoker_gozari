@@ -46,6 +46,9 @@ PAYMENT_TOKEN = os.getenv('BALE_PROVIDER_TOKEN')
 MONGO_URI = os.getenv('MONGO_URI')
 BASE_URL = f"https://tapi.bale.ai/bot{BOT_TOKEN}"
 
+# شماره ادمین (فرمت بین‌المللی: 989302446141)
+ADMIN_PHONE = "989302446141"
+
 app = Flask('')
 
 @app.route('/')
@@ -94,7 +97,20 @@ except Exception as e:
     users_collection = None
     temp_users_collection = None
 
-# ========== سیستم رجیستر با شماره تلفن ==========
+# ========== توابع کمکی ==========
+
+def is_admin_user(user_id):
+    """بررسی اینکه آیا کاربر ادمین است"""
+    try:
+        if users_collection is None:
+            return False
+        
+        user = users_collection.find_one({"user_id": str(user_id)})
+        if user and user.get("phone_number") == ADMIN_PHONE:
+            return True
+        return False
+    except:
+        return False
 
 def validate_phone_number(phone):
     """اعتبارسنجی شماره تلفن ایرانی"""
@@ -182,32 +198,15 @@ def get_registered_users_count():
     except:
         return 0
 
-def get_active_users_count():
-    """دریافت تعداد کاربران فعال (30 روز گذشته)"""
-    try:
-        if users_collection is not None:  # اصلاح: مقایسه با None
-            thirty_days_ago = datetime.now() - timedelta(days=30)
-            return users_collection.count_documents({
-                "last_login": {"$gte": thirty_days_ago}
-            })
-        return 0
-    except:
-        return 0
-
 def update_bot_profile():
     """آپدیت پروفایل ربات با تعداد کاربران"""
     try:
         total_users = get_registered_users_count()
-        active_users = get_active_users_count()
         
-        # ایجاد متن برای بیوگرافی (حداکثر 70 کاراکتر در بله)
-        bio_text = f"👥 {total_users} کاربر ثبت‌نامی"
+        # ایجاد متن برای بیوگرافی
+        bio_text = f"✨ معجزه شکرگزاری روزانه"
         
-        # اگر تعداد قابل توجهی کاربر فعال داریم
-        if active_users > 0:
-            bio_text = f"👥 {total_users} کاربر | 🔥 {active_users} فعال"
-        
-        # آپدیت نام ربات (اختیاری)
+        # آپدیت نام ربات
         name_text = f"معجزه شکرگزاری ({total_users}+)"
         
         # آپدیت بیوگرافی
@@ -220,7 +219,7 @@ def update_bot_profile():
         data_name = {"name": name_text[:64]}  # محدودیت کاراکتر نام
         requests.post(url_name, json=data_name, timeout=5)
         
-        print(f"📊 پروفایل ربات آپدیت شد: {bio_text}")
+        print(f"📊 پروفایل ربات آپدیت شد: {name_text}")
         
     except Exception as e:
         print(f"⚠️ خطا در آپدیت پروفایل: {e}")
@@ -236,7 +235,6 @@ def start_registration(chat_id, user_id, username, first_name, last_name):
 ✅ شما قبلاً ثبت‌نام کرده‌اید!
 
 👤 نام: {existing.get('full_name', '')}
-📱 شماره: {existing.get('phone_number', '')}
 📅 تاریخ ثبت‌نام: {existing.get('registration_date_str', '')}
 
 🎯 اکنون می‌توانید از امکانات ربات استفاده کنید.
@@ -359,16 +357,13 @@ def handle_phone_number(chat_id, user_id, phone_number):
 • پیشرفت خود را دنبال کنید
 • در چالش‌ها شرکت کنید
 
-📊 **آمار ربات:**
-در حال حاضر {get_registered_users_count()} نفر در ربات ثبت‌نام کرده‌اند.
-
 برای شروع روی دکمه زیر کلیک کنید:
 """
             
             keyboard = {
                 "inline_keyboard": [
                     [{"text": "🚀 شروع سفر شکرگزاری", "callback_data": "start_using"}],
-                    [{"text": "📊 مشاهده آمار", "callback_data": "show_stats"}]
+                    [{"text": "📖 راهنما", "callback_data": "help"}]
                 ]
             }
             
@@ -381,11 +376,15 @@ def handle_phone_number(chat_id, user_id, phone_number):
         print(f"❌ خطا در پردازش شماره: {e}")
         send_message(chat_id, "⚠️ خطایی رخ داد، لطفاً مجدد تلاش کنید.")
 
-def show_registration_stats(chat_id):
-    """نمایش آمار ثبت‌نام"""
+def show_registration_stats(chat_id, user_id):
+    """نمایش آمار ثبت‌نام فقط برای ادمین"""
     try:
+        # چک کردن ادمین بودن
+        if not is_admin_user(user_id):
+            send_message(chat_id, "⛔ این دستور فقط برای مدیر ربات قابل دسترسی است.")
+            return
+        
         total_users = get_registered_users_count()
-        active_users = get_active_users_count()
         
         # محاسبه کاربران جدید امروز
         today = datetime.now().strftime("%Y-%m-%d")
@@ -412,7 +411,6 @@ def show_registration_stats(chat_id):
 
 👥 **کاربران ثبت‌نام شده:**
 ├ کل کاربران: {total_users:,} نفر
-├ فعال (۳۰ روز گذشته): {active_users:,} نفر
 ├ جدید امروز: {new_today:,} نفر
 └ رشد روزانه: {growth_rate:+.1f}% 📈
 
@@ -449,7 +447,6 @@ def show_registration_stats(chat_id):
         keyboard = {
             "inline_keyboard": [
                 [{"text": "🔄 بروزرسانی آمار", "callback_data": "refresh_reg_stats"}],
-                [{"text": "📥 خروجی Excel", "callback_data": "export_users"}],
                 [{"text": "🏠 منوی اصلی", "callback_data": "main_menu"}]
             ]
         }
@@ -640,24 +637,38 @@ def handle_start(chat_id, user_id, username=None, first_name=None, last_name=Non
         user_data = users_collection.find_one({"user_id": str(user_id)})
         is_registered = user_data is not None
     
+    # بررسی آیا کاربر ادمین است
+    is_admin = is_admin_user(user_id)
+    
     if is_registered:
-        # کاربر ثبت‌نام کرده - منوی اصلی
-        start_keyboard = {
-            "inline_keyboard": [
-                [{"text": "🚀 شروع سفر ۲۸ روزه", "callback_data": "start_using"}],
-                [{"text": "📊 آمار ثبت‌نام", "callback_data": "show_reg_stats"}],
-                [{"text": "💝 حمایت از توسعه", "callback_data": "support_developer"}],
-                [{"text": "📖 راهنما", "callback_data": "help"}]
-            ]
-        }
-        message = "✨ به ربات معجزه شکرگزاری خوش آمدید! انتخاب کنید:"
+        # کاربر ثبت‌نام کرده
+        if is_admin:
+            # منوی ادمین
+            start_keyboard = {
+                "inline_keyboard": [
+                    [{"text": "🚀 شروع سفر ۲۸ روزه", "callback_data": "start_using"}],
+                    [{"text": "📊 آمار ربات (ادمین)", "callback_data": "show_reg_stats"}],
+                    [{"text": "💝 حمایت از توسعه", "callback_data": "support_developer"}],
+                    [{"text": "📖 راهنما", "callback_data": "help"}]
+                ]
+            }
+        else:
+            # منوی کاربر عادی
+            start_keyboard = {
+                "inline_keyboard": [
+                    [{"text": "🚀 شروع سفر ۲۸ روزه", "callback_data": "start_using"}],
+                    [{"text": "💝 حمایت از توسعه", "callback_data": "support_developer"}],
+                    [{"text": "📖 راهنما", "callback_data": "help"}]
+                ]
+            }
+        
+        message = f"✨ به ربات معجزه شکرگزاری خوش آمدید! انتخاب کنید:"
     else:
         # کاربر ثبت‌نام نکرده - درخواست ثبت‌نام
         start_keyboard = {
             "inline_keyboard": [
                 [{"text": "📝 ثبت‌نام در ربات", "callback_data": "start_registration"}],
-                [{"text": "❓ چرا باید ثبت‌نام کنم؟", "callback_data": "why_register"}],
-                [{"text": "📊 آمار ربات", "callback_data": "show_reg_stats"}]
+                [{"text": "❓ چرا باید ثبت‌نام کنم؟", "callback_data": "why_register"}]
             ]
         }
         message = f"""
@@ -673,8 +684,6 @@ def handle_start(chat_id, user_id, username=None, first_name=None, last_name=Non
 • به تمام تمرین‌ها دسترسی دارید
 • پیشرفت شما ذخیره می‌شود
 • در چالش‌ها شرکت می‌کنید
-
-👥 **در حال حاضر {get_registered_users_count()} نفر عضو ربات هستند.**
 
 ✨ انتخاب کنید:
 """
@@ -699,10 +708,7 @@ def handle_category_selection(chat_id, user_id, topic_id):
 ۲. شماره موبایل خود را وارد کنید
 ۳. ثبت‌نام شما تأیید می‌شود
 ۴. دسترسی کامل پیدا می‌کنید
-
-👥 **هم‌اکنون {get_registered_users_count()} نفر عضو هستند.**
 """
-                message = message.format(get_registered_users_count())
                 keyboard = {
                     "inline_keyboard": [
                         [{"text": "📝 ثبت‌نام در ربات", "callback_data": "start_registration"}],
@@ -756,9 +762,6 @@ def handle_category_selection(chat_id, user_id, topic_id):
     except Exception as e:
         traceback.print_exc()
         send_message(chat_id, "⚠️ مشکل موقتی پیش آمد.\nسیستم در حال به‌روزرسانی است.")
-
-# سایر توابع (handle_complete_day, handle_review_past_days, etc.) 
-# مانند قبل باقی می‌مانند، فقط حتماً چک ثبت‌نام اضافه کنید
 
 # ========== حلقه اصلی Polling ==========
 
@@ -814,7 +817,8 @@ def start_polling():
                             handle_phone_number(chat_id, user_id, text)
                         
                         elif text == "/stats":
-                            show_registration_stats(chat_id)
+                            # فقط برای ادمین
+                            show_registration_stats(chat_id, user_id)
                         
                         elif "موضوعات" in text or text == "/topics" or text == "🎯 موضوعات شکرگزاری":
                             # چک ثبت‌نام قبل از نمایش موضوعات
@@ -849,8 +853,13 @@ def start_polling():
                         if data == "start_registration":
                             start_registration(chat_id, user_id, username, first_name, last_name)
                         
-                        elif data == "show_reg_stats" or data == "refresh_reg_stats":
-                            show_registration_stats(chat_id)
+                        elif data == "show_reg_stats":
+                            # فقط برای ادمین
+                            show_registration_stats(chat_id, user_id)
+                        
+                        elif data == "refresh_reg_stats":
+                            # فقط برای ادمین
+                            show_registration_stats(chat_id, user_id)
                         
                         elif data == "why_register":
                             message = f"""
@@ -862,9 +871,6 @@ def start_polling():
 ۳. 📊 **گزارش شخصی:** نمودار پیشرفت روزانه
 ۴. 🎯 **چالش‌های ویژه:** فقط برای اعضا
 ۵. 🔔 **نوتیفیکیشن:** یادآوری تمرین روزانه
-
-👥 **جامعه کاربران:**
-در حال حاضر {get_registered_users_count()} نفر عضو ربات هستند.
 
 📌 **اطلاعات شما محفوظ است:**
 • شماره شما فقط برای احراز هویت استفاده می‌شود
@@ -903,6 +909,6 @@ def start_polling():
 
 if __name__ == "__main__":
     print("🤖 راه‌اندازی ربات معجزه شکرگزاری...")
-    print(f"📊 دیتابیس: {'MongoDB ✅' if users_collection is not None else 'عدم دسترسی ⚠️'}")  # اصلاح: is not None
-    print(f"👥 کاربران ثبت‌نام شده: {get_registered_users_count()}")
+    print(f"📊 دیتابیس: {'MongoDB ✅' if users_collection is not None else 'عدم دسترسی ⚠️'}")
+    print(f"📱 ادمین: {ADMIN_PHONE}")
     start_polling()
