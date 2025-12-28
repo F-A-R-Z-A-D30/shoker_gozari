@@ -7,7 +7,7 @@ class DailyResetManager:
         # اتصال به دیتابیس
         mongo_uri = os.getenv("MONGO_URI")
         self.client = MongoClient(mongo_uri)
-        self.db = self.client['shoker_gozari_db']
+        self.db = self.client['gratitude_bot'] 
         self.collection = self.db['daily_access']
 
     def can_access_today(self, user_id, topic_id):
