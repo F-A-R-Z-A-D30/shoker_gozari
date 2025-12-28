@@ -1058,12 +1058,21 @@ def start_polling():
                             except:
                                 send_message(chat_id, "⚠️ خطا در انتخاب موضوع")
                         
-                        # دکمه "امروز شکرگزار بودم"
-                        elif data.startswith("complete_"):
+                        # دکمه "امروز شکرگزار بودم" - پشتیبانی از هر دو فرمت
+                        elif data.startswith("complete_day_") or data.startswith("complete_"):
                             try:
                                 parts = data.split("_")
-                                topic_id = int(parts[1])
-                                day_num = int(parts[2])
+                                
+                                # تشخیص فرمت callback
+                                if data.startswith("complete_day_"):
+                                    topic_id = int(parts[2])
+                                    day_num = int(parts[3])
+                                else:  # complete_
+                                    topic_id = int(parts[1])
+                                    day_num = int(parts[2])
+                                
+                                print(f"🔍 ثبت تمرین - callback: {data}")
+                                print(f"🔍 topic_id: {topic_id}, day_num: {day_num}, user_id: {user_id}")
                                 
                                 # چک ثبت‌نام
                                 if users_collection is not None:
@@ -1072,7 +1081,10 @@ def start_polling():
                                         send_message(chat_id, "⛔ ابتدا ثبت‌نام کنید.")
                                         continue
                                 
+                                # فراخوانی تابع ثبت تمرین
+                                print(f"🔍 فراخوانی complete_day_for_user...")
                                 result = complete_day_for_user(user_id, topic_id, day_num)
+                                print(f"🔍 نتیجه ثبت تمرین: {result}")
                                 
                                 if result["success"]:
                                     # نمایش پیام موفقیت
@@ -1111,11 +1123,16 @@ def start_polling():
                                             else:
                                                 send_message(chat_id, msg_text, inline_keyboard)
                                 else:
-                                    send_message(chat_id, result.get("message", "⚠️ خطا در ثبت تمرین"))
+                                    error_msg = result.get("message", "⚠️ خطا در ثبت تمرین")
+                                    print(f"❌ خطا در ثبت تمرین: {error_msg}")
+                                    send_message(chat_id, error_msg)
                                     
                             except Exception as e:
                                 print(f"❌ خطا در ثبت تمرین: {e}")
-                                send_message(chat_id, "⚠️ خطا در ثبت تمرین")
+                                print(f"🔍 callback data: {data}")
+                                print(f"🔍 user_id: {user_id}")
+                                traceback.print_exc()
+                                send_message(chat_id, "⚠️ خطا در ثبت تمرین. لطفاً بعداً مجدد تلاش کنید.")
                         
                         # دکمه "پیشرفت" برای یک موضوع خاص
                         elif data.startswith("progress_"):
