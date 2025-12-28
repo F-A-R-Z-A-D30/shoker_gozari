@@ -80,7 +80,7 @@ def get_mongo_client():
 
 try:
     mongo_client = get_mongo_client()
-    if mongo_client:
+    if mongo_client is not None:  # اصلاح: مقایسه با None
         db = mongo_client['gratitude_bot']
         users_collection = db['registered_users']  # کاربران ثبت‌نام شده
         temp_users_collection = db['temp_users']   # کاربران در حال ثبت‌نام
@@ -125,7 +125,7 @@ def validate_phone_number(phone):
 def register_user(user_id, username, first_name, last_name, phone_number):
     """ثبت‌نام کاربر در دیتابیس"""
     try:
-        if not users_collection:
+        if users_collection is None:  # اصلاح: مقایسه با None
             return {"success": False, "message": "دیتابیس در دسترس نیست"}
         
         now = datetime.now()
@@ -159,7 +159,7 @@ def register_user(user_id, username, first_name, last_name, phone_number):
         users_collection.insert_one(user_data)
         
         # حذف از کاربران موقت
-        if temp_users_collection:
+        if temp_users_collection is not None:  # اصلاح: مقایسه با None
             temp_users_collection.delete_one({"user_id": str(user_id)})
         
         print(f"✅ کاربر ثبت‌نام شد: {user_id} | شماره: {phone_number}")
@@ -176,7 +176,7 @@ def register_user(user_id, username, first_name, last_name, phone_number):
 def get_registered_users_count():
     """دریافت تعداد کاربران ثبت‌نام شده"""
     try:
-        if users_collection:
+        if users_collection is not None:  # اصلاح: مقایسه با None
             return users_collection.count_documents({})
         return 0
     except:
@@ -185,7 +185,7 @@ def get_registered_users_count():
 def get_active_users_count():
     """دریافت تعداد کاربران فعال (30 روز گذشته)"""
     try:
-        if users_collection:
+        if users_collection is not None:  # اصلاح: مقایسه با None
             thirty_days_ago = datetime.now() - timedelta(days=30)
             return users_collection.count_documents({
                 "last_login": {"$gte": thirty_days_ago}
@@ -229,7 +229,7 @@ def start_registration(chat_id, user_id, username, first_name, last_name):
     """شروع فرآیند ثبت‌نام"""
     try:
         # بررسی آیا کاربر قبلاً ثبت‌نام کرده
-        if users_collection:
+        if users_collection is not None:  # اصلاح: مقایسه با None
             existing = users_collection.find_one({"user_id": str(user_id)})
             if existing:
                 message = f"""
@@ -245,7 +245,7 @@ def start_registration(chat_id, user_id, username, first_name, last_name):
                 return
         
         # ذخیره موقت اطلاعات کاربر
-        if temp_users_collection:
+        if temp_users_collection is not None:  # اصلاح: مقایسه با None
             temp_users_collection.update_one(
                 {"user_id": str(user_id)},
                 {
@@ -319,7 +319,7 @@ def handle_phone_number(chat_id, user_id, phone_number):
         
         # دریافت اطلاعات کاربر از دیتابیس موقت
         user_info = None
-        if temp_users_collection:
+        if temp_users_collection is not None:  # اصلاح: مقایسه با None
             user_info = temp_users_collection.find_one({"user_id": str(user_id)})
         
         if not user_info:
@@ -390,7 +390,7 @@ def show_registration_stats(chat_id):
         # محاسبه کاربران جدید امروز
         today = datetime.now().strftime("%Y-%m-%d")
         new_today = 0
-        if users_collection:
+        if users_collection is not None:  # اصلاح: مقایسه با None
             new_today = users_collection.count_documents({
                 "registration_date_str": today
             })
@@ -398,7 +398,7 @@ def show_registration_stats(chat_id):
         # محاسبه درصد رشد روزانه
         yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
         new_yesterday = 0
-        if users_collection:
+        if users_collection is not None:  # اصلاح: مقایسه با None
             new_yesterday = users_collection.count_documents({
                 "registration_date_str": yesterday
             })
@@ -423,7 +423,7 @@ def show_registration_stats(chat_id):
         for i in range(7):
             date = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
             day_count = 0
-            if users_collection:
+            if users_collection is not None:  # اصلاح: مقایسه با None
                 day_count = users_collection.count_documents({
                     "registration_date_str": date
                 })
@@ -432,7 +432,7 @@ def show_registration_stats(chat_id):
                 stats_message += f"├ {date}: {day_count} کاربر جدید\n"
         
         # ۵ کاربر آخر
-        if users_collection:
+        if users_collection is not None:  # اصلاح: مقایسه با None
             last_users = list(users_collection.find(
                 {},
                 {"full_name": 1, "registration_date_str": 1, "phone_number": 1}
@@ -604,7 +604,7 @@ def create_progress_text(user_id):
 """
         
         # آپدیت last_login کاربر
-        if users_collection:
+        if users_collection is not None:  # اصلاح: مقایسه با None
             users_collection.update_one(
                 {"user_id": str(user_id)},
                 {"$set": {"last_login": datetime.now()}}
@@ -636,7 +636,7 @@ def handle_start(chat_id, user_id, username=None, first_name=None, last_name=Non
     
     # بررسی آیا کاربر ثبت‌نام کرده
     is_registered = False
-    if users_collection:
+    if users_collection is not None:  # اصلاح: مقایسه با None
         user_data = users_collection.find_one({"user_id": str(user_id)})
         is_registered = user_data is not None
     
@@ -685,7 +685,7 @@ def handle_category_selection(chat_id, user_id, topic_id):
     """دسترسی به محتوا فقط برای کاربران ثبت‌نام شده"""
     try:
         # بررسی ثبت‌نام
-        if users_collection:
+        if users_collection is not None:  # اصلاح: مقایسه با None
             user_data = users_collection.find_one({"user_id": str(user_id)})
             if not user_data:
                 # کاربر ثبت‌نام نکرده
@@ -818,7 +818,7 @@ def start_polling():
                         
                         elif "موضوعات" in text or text == "/topics" or text == "🎯 موضوعات شکرگزاری":
                             # چک ثبت‌نام قبل از نمایش موضوعات
-                            if users_collection:
+                            if users_collection is not None:  # اصلاح: مقایسه با None
                                 user_data = users_collection.find_one({"user_id": str(user_id)})
                                 if not user_data:
                                     send_message(chat_id, "⛔ ابتدا ثبت‌نام کنید.")
@@ -887,7 +887,7 @@ def start_polling():
                         # سایر callback ها مانند قبل
                         elif data in ["start_using", "categories"]:
                             # چک ثبت‌نام
-                            if users_collection:
+                            if users_collection is not None:  # اصلاح: مقایسه با None
                                 user_data = users_collection.find_one({"user_id": str(user_id)})
                                 if not user_data:
                                     send_message(chat_id, "⛔ ابتدا ثبت‌نام کنید.")
@@ -903,6 +903,6 @@ def start_polling():
 
 if __name__ == "__main__":
     print("🤖 راه‌اندازی ربات معجزه شکرگزاری...")
-    print(f"📊 دیتابیس: {'MongoDB ✅' if users_collection else 'عدم دسترسی ⚠️'}")
+    print(f"📊 دیتابیس: {'MongoDB ✅' if users_collection is not None else 'عدم دسترسی ⚠️'}")  # اصلاح: is not None
     print(f"👥 کاربران ثبت‌نام شده: {get_registered_users_count()}")
     start_polling()
