@@ -7,7 +7,7 @@ from pymongo import MongoClient
 # --- اتصال به MongoDB ---
 MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
-db = client['shoker_gozari_db']
+db = client['gratitude_bot']
 users_col = db['users_progress']
 
 TOPICS = {
@@ -276,3 +276,4 @@ def get_user_topic_progress(user_id, topic_id):
 
 def start_topic_for_user(user_id, topic_id):
     return load_day_content(topic_id, 1, user_id)
+
