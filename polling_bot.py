@@ -49,7 +49,7 @@ MONGO_URI = os.getenv('MONGO_URI')
 BASE_URL = f"https://tapi.bale.ai/bot{BOT_TOKEN}"
 
 # شماره ادمین (فرمت بین‌المللی: 989302446141)
-ADMIN_PHONE = "989302446141,09331557957"
+ADMIN_PHONE = "989302446141","09331557957"
 
 app = Flask('')
 
@@ -1334,5 +1334,6 @@ if __name__ == "__main__":
     print(f"📊 دیتابیس: {'MongoDB ✅' if users_collection is not None else 'عدم دسترسی ⚠️'}")
     print(f"📱 ادمین: {ADMIN_PHONE}")
     start_polling()
+
 
 
