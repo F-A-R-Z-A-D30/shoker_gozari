@@ -43,7 +43,8 @@ from static.graphics_handler import GraphicsHandler
 from daily_reset import daily_reset
 
 load_dotenv()
-BOT_TOKEN = os.getenv('BALE_BOT_TOKEN')
+BOT_TOKEN = "629127852:H5XoRJbX_vWoBfyDVBsOSReoydAsiFnh7TQ"
+# BOT_TOKEN = os.getenv('BALE_BOT_TOKEN')
 PAYMENT_TOKEN = os.getenv('BALE_PROVIDER_TOKEN')
 MONGO_URI = os.getenv('MONGO_URI')
 BASE_URL = f"https://tapi.bale.ai/bot{BOT_TOKEN}"
